@@ -1,12 +1,13 @@
 import { Bell, UserCircle, LogOut, User, Menu } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/authSlice";
 import { ui } from "../../lib/ui";
 
 export default function StudentHeader({ onOpenSidebar }) {
-  const studentName = "Anjali";
+  const authName = useSelector((s) => s.auth.user?.name);
+  const studentName = authName?.trim() || "Student";
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
@@ -21,10 +22,9 @@ export default function StudentHeader({ onOpenSidebar }) {
   }, [open]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
     localStorage.removeItem("student");
     dispatch(logout());
-    navigate("/");
+    navigate("/login", { replace: true });
   };
 
   const handleProfile = () => {

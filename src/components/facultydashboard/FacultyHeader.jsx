@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { LogOut, User, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/authSlice";
 import { cx, ui } from "../../lib/ui";
 
 export default function FacultyHeader({ onOpenSidebar }) {
-  const facultyName = "Dr. Sharma";
+  const authName = useSelector((s) => s.auth.user?.name);
+  const facultyName = authName?.trim() || "Faculty";
   const lastLogin = "08 Apr 2026, 10:30 PM";
 
   const [open, setOpen] = useState(false);
@@ -29,7 +30,7 @@ export default function FacultyHeader({ onOpenSidebar }) {
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate("/");
+    navigate("/login", { replace: true });
   };
 
   return (

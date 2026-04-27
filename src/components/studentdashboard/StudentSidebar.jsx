@@ -1,4 +1,6 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logout } from "../../store/authSlice";
 import {
   LayoutDashboard,
   BookOpen,
@@ -9,25 +11,31 @@ import {
   BarChart3,
   BookMarked,
   LogOut,
+  UserCircle,
 } from "lucide-react";
 import { DashboardSidebarShell } from "../dashboard/DashboardSidebarShell";
 import { cx, ui, dashNavLinkClass } from "../../lib/ui";
 
+/** All absolute paths — relative `to` breaks under React Router v7 from nested URLs. */
 const menuItems = [
   { name: "Dashboard", path: "/studentdashboard", icon: LayoutDashboard, end: true },
-  { name: "Courses", path: "courses", icon: BookOpen },
-  { name: "Attendance", path: "attendance", icon: ClipboardCheck },
-  { name: "Marks", path: "marks", icon: BarChart3 },
-  { name: "Assignments", path: "assignments", icon: BookMarked },
-  { name: "Results", path: "results", icon: FileText },
-  { name: "Notice", path: "notice", icon: Bell },
-  { name: "Timetable", path: "timetable", icon: Calendar },
+  { name: "Profile", path: "/studentdashboard/profile", icon: UserCircle },
+  { name: "Courses", path: "/studentdashboard/courses", icon: BookOpen },
+  { name: "Attendance", path: "/studentdashboard/attendance", icon: ClipboardCheck },
+  { name: "Marks", path: "/studentdashboard/marks", icon: BarChart3 },
+  { name: "Assignments", path: "/studentdashboard/assignments", icon: BookMarked },
+  { name: "Results", path: "/studentdashboard/results", icon: FileText },
+  { name: "Notice", path: "/studentdashboard/notice", icon: Bell },
+  { name: "Timetable", path: "/studentdashboard/timetable", icon: Calendar },
 ];
 
 export default function StudentSidebar({ open, onClose }) {
-  const logout = () => {
-    localStorage.clear();
-    window.location.href = "/";
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -39,7 +47,7 @@ export default function StudentSidebar({ open, onClose }) {
       footer={
         <button
           type="button"
-          onClick={logout}
+          onClick={handleLogout}
           className={cx(
             ui.btnBase,
             "w-full justify-center border border-white/15 bg-white/5 py-2.5 text-sm text-white hover:border-red-300/40 hover:bg-red-600/90"

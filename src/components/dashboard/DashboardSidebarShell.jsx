@@ -12,6 +12,8 @@ export function DashboardSidebarShell({
   subtitle,
   children,
   footer,
+  /** Merged with default nav classes, e.g. `overflow-hidden` to hide scrollbar when nav is short */
+  navClassName,
 }) {
   return (
     <>
@@ -46,7 +48,7 @@ export function DashboardSidebarShell({
           </button>
         </div>
 
-        <nav className={ui.dashSidebarNav}>{children}</nav>
+        <nav className={cx(ui.dashSidebarNav, navClassName)}>{children}</nav>
 
         <div className={ui.dashSidebarFooter}>{footer}</div>
       </aside>

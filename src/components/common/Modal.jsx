@@ -23,14 +23,14 @@ export default function Modal({
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"
+        className="absolute inset-0 z-0 bg-black/30 backdrop-blur-[2px]"
         onClick={onClose}
         aria-label="Close modal"
       />
 
       <div
         className={[
-          "relative w-full",
+          "relative z-10 w-full",
           maxWidthClassName,
           "rounded-2xl bg-white brand-ring",
           "animate-fadeIn",

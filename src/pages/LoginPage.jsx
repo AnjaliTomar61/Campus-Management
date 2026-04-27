@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../lib/apiClient";
-import { setCredentials } from "../store/authSlice";
+import { normalizeRole, setCredentials } from "../store/authSlice";
+import { notify } from "../lib/notify";
 import { cx, ui } from "../lib/ui";
 import { AuthPageShell } from "../components/auth/AuthPageShell";
 
@@ -12,9 +13,55 @@ function dashboardPathForRole(role) {
   return "/studentdashboard";
 }
 
+/** Map Mongoose-style doc to the shape `authSlice` expects (no password). */
+function userFromDoc(doc) {
+  if (!doc || typeof doc !== "object") return null;
+  const id = doc.id ?? doc._id;
+  if (id == null) return null;
+  const role = normalizeRole(doc.role);
+  if (!role) return null;
+  return {
+    id: String(id),
+    name: doc.name ?? "",
+    email: doc.email ?? "",
+    role,
+    mobile: doc.mobile ?? "",
+  };
+}
+
+/**
+ * Normalize login JSON: supports
+ * - `{ token, user }`
+ * - `{ token, data: { token, user } }` (nested)
+ * - `{ token, data: <mongoose user doc> }` (token at root only)
+ */
+function unwrapAuthPayload(data) {
+  if (!data || typeof data !== "object") return null;
+  if (data.token && data.user) return data;
+
+  const inner = data.data;
+  if (inner && typeof inner === "object") {
+    if (inner.token && inner.user) {
+      return { success: data.success, message: data.message, token: inner.token, user: inner.user, role: inner.role };
+    }
+    if (inner.token) {
+      const user = userFromDoc(inner.user) || userFromDoc(inner);
+      if (user) return { success: data.success, message: data.message, token: inner.token, user, role: user.role };
+    }
+  }
+
+  if (data.token && !data.user) {
+    const user = userFromDoc(data.data);
+    if (user) return { ...data, user, role: user.role };
+  }
+
+  return data;
+}
+
 export default function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
 
   const [form, setForm] = useState({ email: "", password: "" });
@@ -43,37 +90,65 @@ export default function LoginPage() {
         },
         {
           meta: {
-            successMessage: "Welcome back!",
             suppressErrorToast: true,
           },
         }
       );
 
-      const data = res.data;
-      if (data?.success === false) {
-        throw new Error(data?.message || "Login failed");
+      const raw = unwrapAuthPayload(res.data);
+      if (!raw || raw.success === false) {
+        throw new Error(raw?.message || "Login failed");
       }
 
-      const token = data?.token;
-      const user = data?.user;
-      const role = user?.role;
+      const token = typeof raw.token === "string" ? raw.token : null;
+      const userRaw = raw.user;
+      const role = normalizeRole(userRaw?.role ?? raw.role);
 
       if (!token || !role) {
-        throw new Error(data?.message || "Login failed. Missing token or role.");
+        throw new Error(raw?.message || "Login failed. Missing token or role.");
       }
 
-      dispatch(setCredentials({ token, user, role }));
-
-      const from = searchParams.get("from");
-      const hint = searchParams.get("role");
-      if (from && from.startsWith("/") && hint && role === hint) {
-        navigate(from, { replace: true });
-        return;
+      const id =
+        userRaw?.id != null
+          ? String(userRaw.id)
+          : userRaw?._id != null
+            ? String(userRaw._id)
+            : null;
+      if (!id) {
+        throw new Error(raw?.message || "Login failed. User id missing from server response.");
       }
 
-      navigate(dashboardPathForRole(role), { replace: true });
+      const userForStore = {
+        ...userRaw,
+        id,
+        role,
+      };
+
+      dispatch(setCredentials({ token, user: userForStore, role }));
+
+      const fromQuery = searchParams.get("from");
+      const fromState = location.state?.from;
+      const from =
+        (typeof fromQuery === "string" && fromQuery.startsWith("/") && fromQuery) ||
+        (typeof fromState === "string" && fromState.startsWith("/") ? fromState : null);
+      const hint = normalizeRole(searchParams.get("role"));
+      const target =
+        from && hint && role === hint
+          ? from
+          : dashboardPathForRole(role);
+
+      notify({ type: "success", message: "Welcome back!" });
+      queueMicrotask(() => {
+        navigate(target, { replace: true });
+      });
     } catch (e2) {
-      setError(e2?.message || "Login failed");
+      const msg =
+        e2 && typeof e2 === "object" && "message" in e2
+          ? String(e2.message)
+          : typeof e2 === "string"
+            ? e2
+            : "Login failed";
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -86,7 +161,8 @@ export default function LoginPage() {
           Welcome back
         </h1>
         <p className="mt-2 text-pretty text-sm leading-relaxed text-slate-600 sm:text-[0.9375rem]">
-          Sign in with your campus email to open your dashboard.
+          Sign in with your campus email (student, faculty, or admin). If your department created your faculty
+          account, use your official email on this page—the same address used in the faculty directory.
         </p>
       </header>
 

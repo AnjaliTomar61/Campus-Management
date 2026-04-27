@@ -7,22 +7,27 @@ import {
   CalendarDays,
   ClipboardCheck,
   FileText,
+  Award,
   Users,
+  UserRound,
   UserCircle,
   LogOut,
 } from "lucide-react";
 import { DashboardSidebarShell } from "../dashboard/DashboardSidebarShell";
 import { cx, ui, dashNavLinkClass } from "../../lib/ui";
 
+/** Every link stays under `/facultydashboard` so it matches nested routes in App.jsx. */
 const menu = [
   { name: "Dashboard", path: "/facultydashboard", icon: LayoutDashboard, end: true },
   { name: "Profile", path: "/facultydashboard/profile", icon: UserCircle },
-  { name: "Courses", path: "/faculty/courses", icon: BookOpen },
-  { name: "Timetable", path: "/faculty/timetable", icon: CalendarDays },
-  { name: "Attendance", path: "/faculty/attendance", icon: ClipboardCheck },
-  { name: "Marks", path: "/faculty/marks", icon: FileText },
-  { name: "Assignments", path: "/faculty/assignments", icon: FileText },
-  { name: "Students", path: "/faculty/students", icon: Users },
+  { name: "Assigned students", path: "/facultydashboard/assigned-students", icon: UserRound },
+  { name: "Courses", path: "/facultydashboard/courses", icon: BookOpen },
+  { name: "Timetable", path: "/facultydashboard/timetable", icon: CalendarDays },
+  { name: "Attendance", path: "/facultydashboard/attendance", icon: ClipboardCheck },
+  { name: "Results", path: "/facultydashboard/results", icon: Award },
+  { name: "Marks", path: "/facultydashboard/marks", icon: FileText },
+  { name: "Assignments", path: "/facultydashboard/assignments", icon: FileText },
+  { name: "Students", path: "/facultydashboard/assigned-students", icon: Users },
 ];
 
 export default function FacultySidebar({ open, onClose }) {
@@ -30,9 +35,8 @@ export default function FacultySidebar({ open, onClose }) {
   const dispatch = useDispatch();
 
   const doLogout = () => {
-    localStorage.removeItem("token");
     dispatch(logout());
-    navigate("/");
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -59,7 +63,7 @@ export default function FacultySidebar({ open, onClose }) {
         const Icon = item.icon;
         return (
           <NavLink
-            key={item.path}
+            key={`${item.name}-${item.path}`}
             to={item.path}
             end={item.end}
             onClick={() => onClose?.()}

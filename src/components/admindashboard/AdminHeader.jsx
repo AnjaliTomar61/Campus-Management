@@ -1,13 +1,26 @@
 import { Bell, UserCircle, LogOut, User, Menu } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/authSlice";
 import { cx, ui } from "../../lib/ui";
 
+function sectionLabel(pathname) {
+  if (pathname.includes("/adminprofile")) return "Your profile";
+  if (pathname.includes("/programs")) return "Programs";
+  if (pathname.includes("/semesters")) return "Semesters";
+  if (pathname.includes("/attendance")) return "Attendance";
+  if (pathname.includes("/timetable")) return "Timetable";
+  if (pathname.includes("/results")) return "Results";
+  if (pathname.includes("/faculty")) return "Faculty";
+  if (pathname.includes("/students")) return "Students";
+  return "Admin";
+}
+
 export default function AdminHeader({ onOpenSidebar }) {
-  const adminName = "Anjali";
-  const lastLogin = "08 Apr 2026, 10:30 PM";
+  const location = useLocation();
+  const adminName = useSelector((s) => s.auth.user?.name)?.trim() || "Admin";
+  const section = sectionLabel(location.pathname);
 
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
@@ -23,10 +36,9 @@ export default function AdminHeader({ onOpenSidebar }) {
   }, [open]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
     localStorage.removeItem("admin");
     dispatch(logout());
-    navigate("/");
+    navigate("/login", { replace: true });
   };
 
   const handleProfile = () => {
@@ -49,10 +61,13 @@ export default function AdminHeader({ onOpenSidebar }) {
         ) : null}
         <div className="min-w-0">
           <h1 className={ui.dashHeaderTitle}>
-            Welcome,{" "}
+            <span className="text-slate-500">{section}</span>
+            <span className="mx-1.5 text-slate-300" aria-hidden>
+              /
+            </span>
             <span className="text-(--brand-blue)">{adminName}</span>
           </h1>
-          <p className={ui.dashHeaderMeta}>Last login · {lastLogin}</p>
+          <p className={ui.dashHeaderMeta}>Manage students and faculty from the sidebar</p>
         </div>
       </div>
 
