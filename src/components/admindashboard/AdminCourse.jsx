@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "../../lib/apiClient";
+import Modal from "../common/Modal";
+import { cx, ui } from "../../lib/ui";
 
 export default function AdminCourse() {
   const [courses, setCourses] = useState([]);
@@ -17,17 +19,23 @@ export default function AdminCourse() {
     description: "",
   });
 
-  const API = "http://localhost:3000/api/course";
-
   // FETCH
   const fetchCourses = async () => {
-    const res = await axios.get(`${API}/all`);
-    setCourses(res.data.courses);
+    try {
+      const res = await api.get(`/api/course/all`);
+      setCourses(res.data.courses);
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   const fetchDepartments = async () => {
-    const res = await axios.get("http://localhost:3000/api/department/all");
-    setDepartments(res.data.departments);
+    try {
+      const res = await api.get(`/api/department/all`);
+      setDepartments(res.data.departments);
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   useEffect(() => {
@@ -46,9 +54,13 @@ export default function AdminCourse() {
 
     try {
       if (editId) {
-        await axios.put(`${API}/${editId}`, formData);
+        await api.put(`/api/course/${editId}`, formData, {
+          meta: { successMessage: "Course updated successfully." },
+        });
       } else {
-        await axios.post(`${API}/create`, formData);
+        await api.post(`/api/course/create`, formData, {
+          meta: { successMessage: "Course created successfully." },
+        });
       }
 
       setShowForm(false);
@@ -58,6 +70,11 @@ export default function AdminCourse() {
     } catch (err) {
       console.log(err);
     }
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditId(null);
   };
 
   const resetForm = () => {
@@ -91,23 +108,40 @@ export default function AdminCourse() {
   // DELETE
   const handleDelete = async (id) => {
     if (window.confirm("Delete this course?")) {
-      await axios.delete(`${API}/${id}`);
-      fetchCourses();
+      try {
+        await api.delete(`/api/course/${id}`, {
+          meta: { successMessage: "Course deleted." },
+        });
+        fetchCourses();
+      } catch (e) {
+        console.log(e);
+      }
     }
   };
 
   // TOGGLE
   const handleToggle = async (id) => {
-    await axios.patch(`${API}/toggle/${id}`);
-    fetchCourses();
+    try {
+      await api.patch(`/api/course/toggle/${id}`, null, {
+        meta: { successMessage: "Course status updated." },
+      });
+      fetchCourses();
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className={cx("p-4 sm:p-6", ui.page)}>
 
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Courses</h1>
+      <div className={cx(ui.cardHeader, "mb-6")}>
+        <div>
+          <h1 className={ui.h1}>Courses</h1>
+          <p className="text-sm text-slate-500">
+            Manage courses, assign departments, and enable/disable visibility.
+          </p>
+        </div>
 
         <button
           onClick={() => {
@@ -115,91 +149,133 @@ export default function AdminCourse() {
             setEditId(null);
             resetForm();
           }}
-          className="bg-orange-500 text-white px-4 py-2 rounded"
+          className={cx(ui.btnBase, ui.btnAccent)}
         >
           + Add Course
         </button>
       </div>
 
       {/* TABLE */}
-      <div className="bg-white shadow rounded">
-        <table className="w-full text-left">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="p-3">Name</th>
-              <th className="p-3">Code</th>
-              <th className="p-3">Department</th>
-              <th className="p-3">Fees</th>
-              <th className="p-3">Status</th>
-              <th className="p-3">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {courses.map((c) => (
-              <tr key={c._id} className="border-t">
-                <td className="p-3">{c.courseName}</td>
-                <td className="p-3">{c.courseCode}</td>
-                <td className="p-3">{c.department?.name || "N/A"}</td>
-                <td className="p-3">{c.fees}</td>
-
-                <td className="p-3">
-                  {c.isActive ? (
-                    <span className="text-green-600 font-semibold">Active</span>
-                  ) : (
-                    <span className="text-red-500 font-semibold">Inactive</span>
-                  )}
-                </td>
-
-                <td className="p-3 flex gap-2">
-                  <button onClick={() => handleEdit(c)} className="bg-yellow-400 px-3 py-1 rounded">
-                    Edit
-                  </button>
-
-                  <button onClick={() => handleDelete(c._id)} className="bg-red-500 text-white px-3 py-1 rounded">
-                    Delete
-                  </button>
-
-                  <button onClick={() => handleToggle(c._id)} className="bg-blue-500 text-white px-3 py-1 rounded">
-                    {c.isActive ? "Disable" : "Enable"}
-                  </button>
-                </td>
+      <div className={ui.dashTableCard}>
+        <div className={ui.dashTableScroller}>
+          <table className={cx(ui.dashTable, "min-w-[900px]")}>
+            <thead>
+              <tr className={ui.dashTableHead}>
+                <th className={ui.dashTableTh}>Name</th>
+                <th className={ui.dashTableTh}>Code</th>
+                <th className={ui.dashTableTh}>Department</th>
+                <th className={ui.dashTableTh}>Fees</th>
+                <th className={ui.dashTableTh}>Status</th>
+                <th className={ui.dashTableTh}>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {courses.map((c) => (
+                <tr key={c._id} className={ui.dashTableRow}>
+                  <td className={ui.dashTableTd}>{c.courseName}</td>
+                  <td className={ui.dashTableTd}>{c.courseCode}</td>
+                  <td className={ui.dashTableTd}>{c.department?.name || "N/A"}</td>
+                  <td className={ui.dashTableTd}>{c.fees}</td>
+                  <td className={ui.dashTableTd}>
+                    {c.isActive ? (
+                      <span className="font-semibold text-green-600">Active</span>
+                    ) : (
+                      <span className="font-semibold text-red-500">Inactive</span>
+                    )}
+                  </td>
+                  <td className={ui.dashTableTd}>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(c)}
+                        className={cx(ui.btnBase, ui.btnSoft, "px-3 py-1.5")}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(c._id)}
+                        className={cx(ui.btnBase, ui.btnDanger, "px-3 py-1.5")}
+                      >
+                        Delete
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleToggle(c._id)}
+                        className={cx(ui.btnBase, ui.btnPrimary, "px-3 py-1.5")}
+                      >
+                        {c.isActive ? "Disable" : "Enable"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* ✅ MODAL FORM */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-
-          {/* BLUR BACKGROUND */}
-          <div
-            className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
-            onClick={() => setShowForm(false)}
-          ></div>
-
-          {/* MODAL */}
-          <div className="relative bg-white w-[90%] max-w-2xl rounded-xl shadow-xl p-6">
-
+      <Modal
+        open={showForm}
+        title={editId ? "Update Course" : "Create Course"}
+        onClose={closeForm}
+        maxWidthClassName="max-w-3xl"
+        footer={
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button
-              onClick={() => setShowForm(false)}
-              className="absolute top-3 right-3 text-gray-500"
+              type="button"
+              onClick={closeForm}
+              className={cx(ui.btnBase, ui.btnSoft)}
             >
-              ✕
+              Cancel
             </button>
+            <button
+              type="submit"
+              form="courseForm"
+              className={cx(ui.btnBase, ui.btnPrimary)}
+            >
+              {editId ? "Save Changes" : "Create Course"}
+            </button>
+          </div>
+        }
+      >
+        <form id="courseForm" onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Course Name</label>
+              <input
+                name="courseName"
+                placeholder="e.g. BCA"
+                value={formData.courseName}
+                onChange={handleChange}
+                className={ui.input}
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Course Code</label>
+              <input
+                name="courseCode"
+                placeholder="e.g. BCA101"
+                value={formData.courseCode}
+                onChange={handleChange}
+                className={ui.input}
+                required
+              />
+            </div>
+          </div>
 
-            <h2 className="text-xl font-bold mb-4 text-center">
-              {editId ? "Update Course" : "Add Course"}
-            </h2>
-
-            <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-
-              <input name="courseName" placeholder="Course Name" value={formData.courseName} onChange={handleChange} className="border p-2 rounded" required />
-              <input name="courseCode" placeholder="Course Code" value={formData.courseCode} onChange={handleChange} className="border p-2 rounded" required />
-
-              <select name="department" value={formData.department} onChange={handleChange} className="border p-2 rounded" required>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Department</label>
+              <select
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                className={ui.select}
+                required
+              >
                 <option value="">Select Department</option>
                 {departments.map((d) => (
                   <option key={d._id} value={d._id}>
@@ -207,33 +283,53 @@ export default function AdminCourse() {
                   </option>
                 ))}
               </select>
+            </div>
 
-              <input name="duration" placeholder="Duration" value={formData.duration} onChange={handleChange} className="border p-2 rounded" />
-              {/* <input name="totalSemesters" type="number" placeholder="Semesters" value={formData.totalSemesters} onChange={handleChange} className="border p-2 rounded" /> */}
-              <select
-  name="totalSemesters"
-  value={formData.totalSemesters}
-  onChange={handleChange}
-  className="border p-2 rounded"
-  required
->
-  <option value="">Select Semesters</option>
-
-  {[1,2,3,4,5,6,7,8].map((sem) => (
-    <option key={sem} value={sem}>
-      Semester {sem}
-    </option>
-  ))}
-</select>
-              <input name="fees" type="number" placeholder="Fees" value={formData.fees} onChange={handleChange} className="border p-2 rounded" />
-
-              <button className="col-span-2 bg-green-500 text-white py-2 rounded">
-                {editId ? "Update" : "Create"}
-              </button>
-            </form>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Duration</label>
+              <input
+                name="duration"
+                placeholder="e.g. 3 Years"
+                value={formData.duration}
+                onChange={handleChange}
+                className={ui.input}
+              />
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Total Semesters</label>
+              <select
+                name="totalSemesters"
+                value={formData.totalSemesters}
+                onChange={handleChange}
+                className={ui.select}
+                required
+              >
+                <option value="">Select Semesters</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                  <option key={sem} value={sem}>
+                    Semester {sem}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Fees</label>
+              <input
+                name="fees"
+                type="number"
+                placeholder="e.g. 45000"
+                value={formData.fees}
+                onChange={handleChange}
+                className={ui.input}
+              />
+            </div>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

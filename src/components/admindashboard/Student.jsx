@@ -1,4 +1,6 @@
 import { useState } from "react";
+import Modal from "../common/Modal";
+import { cx, ui } from "../../lib/ui";
 
 export default function Student() {
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -66,15 +68,20 @@ export default function Student() {
   };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className={cx("p-4 sm:p-6", ui.page)}>
 
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Student Management</h1>
+      <div className={cx(ui.cardHeader, "mb-4")}>
+        <div>
+          <h1 className={ui.h1}>Student Management</h1>
+          <p className="text-sm text-slate-500">
+            Search by enrollment number and manage student profiles.
+          </p>
+        </div>
 
         <button
           onClick={() => setShowForm(true)}
-          className="bg-orange-500 text-white px-4 py-2 rounded"
+          className={cx(ui.btnBase, ui.btnAccent)}
         >
           + Add Student
         </button>
@@ -87,190 +94,201 @@ export default function Student() {
           placeholder="Search by Enrollment No..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border p-3 rounded w-full max-w-sm"
+          className={cx(ui.input, "max-w-sm")}
         />
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-xl shadow overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className="bg-gray-200 text-sm">
-            <tr>
-              <th className="p-3">Name</th>
-              <th>Email</th>
-              <th>Enrollment</th>
-              <th>Course</th>
-              <th>Department</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredStudents.map((stu) => (
-              <tr key={stu.id} className="border-t hover:bg-gray-50">
-                <td className="p-3">{stu.name}</td>
-                <td>{stu.email}</td>
-                <td className="font-semibold text-blue-600">
-                  {stu.enrollment}
-                </td>
-                <td>{stu.course}</td>
-                <td>{stu.department}</td>
-
-                <td className="space-x-2">
-                  <button
-                    onClick={() => setSelectedStudent(stu)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded"
-                  >
-                    View
-                  </button>
-
-                  <button className="bg-yellow-500 text-white px-3 py-1 rounded">
-                    Edit
-                  </button>
-
-                  <button className="bg-red-500 text-white px-3 py-1 rounded">
-                    Delete
-                  </button>
-                </td>
+      <div className={ui.dashTableCard}>
+        <div className={ui.dashTableScroller}>
+          <table className={cx(ui.dashTable, "min-w-[900px]")}>
+            <thead>
+              <tr className={ui.dashTableHead}>
+                <th className={ui.dashTableTh}>Name</th>
+                <th className={ui.dashTableTh}>Email</th>
+                <th className={ui.dashTableTh}>Enrollment</th>
+                <th className={ui.dashTableTh}>Course</th>
+                <th className={ui.dashTableTh}>Department</th>
+                <th className={ui.dashTableTh}>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {filteredStudents.map((stu) => (
+                <tr key={stu.id} className={ui.dashTableRow}>
+                  <td className={ui.dashTableTd}>{stu.name}</td>
+                  <td className={ui.dashTableTd}>{stu.email}</td>
+                  <td className={cx(ui.dashTableTd, "font-semibold text-(--brand-blue)")}>
+                    {stu.enrollment}
+                  </td>
+                  <td className={ui.dashTableTd}>{stu.course}</td>
+                  <td className={ui.dashTableTd}>{stu.department}</td>
+                  <td className={ui.dashTableTd}>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedStudent(stu)}
+                        className={cx(ui.btnBase, ui.btnPrimary, "px-3 py-1.5")}
+                      >
+                        View
+                      </button>
+                      <button type="button" className={cx(ui.btnBase, ui.btnSoft, "px-3 py-1.5")}>
+                        Edit
+                      </button>
+                      <button type="button" className={cx(ui.btnBase, ui.btnDanger, "px-3 py-1.5")}>
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* VIEW MODAL */}
-      {selectedStudent && (
-        <StudentModal
-          student={selectedStudent}
-          onClose={() => setSelectedStudent(null)}
-        />
-      )}
+      <Modal
+        open={Boolean(selectedStudent)}
+        title="Student Details"
+        onClose={() => setSelectedStudent(null)}
+        maxWidthClassName="max-w-3xl"
+        footer={
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setSelectedStudent(null)}
+              className={cx(ui.btnBase, ui.btnPrimary)}
+            >
+              Close
+            </button>
+          </div>
+        }
+      >
+        {selectedStudent ? <StudentDetails student={selectedStudent} /> : null}
+      </Modal>
 
       {/* ADD STUDENT MODAL */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
-            onClick={() => setShowForm(false)}
-          ></div>
-
-          <div className="relative bg-white w-[90%] max-w-xl rounded-xl shadow-xl p-6">
-
-            <h2 className="text-xl font-bold mb-4 text-center">
-              Add Student
-            </h2>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-
-              <input
-                type="text"
-                name="name"
-                placeholder="Full Name"
-                value={formData.name}
-                onChange={handleChange}
-                className="border p-3 rounded w-full"
-                required
-              />
-
-              <input
-                type="text"
-                name="enrollment"
-                placeholder="Enrollment No"
-                value={formData.enrollment}
-                onChange={handleChange}
-                className="border p-3 rounded w-full"
-                required
-              />
-
-              <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange}
-                className="border p-3 rounded w-full"
-              />
-
-              <input
-                type="text"
-                name="course"
-                placeholder="Course"
-                value={formData.course}
-                onChange={handleChange}
-                className="border p-3 rounded w-full"
-              />
-
-              <input
-                type="text"
-                name="department"
-                placeholder="Department"
-                value={formData.department}
-                onChange={handleChange}
-                className="border p-3 rounded w-full"
-              />
-
-              <select
-                name="result"
-                value={formData.result}
-                onChange={handleChange}
-                className="border p-3 rounded w-full"
-              >
-                <option value="">Select Result</option>
-                <option value="Pass">Pass</option>
-                <option value="Fail">Fail</option>
-              </select>
-
-              <div className="flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="bg-gray-400 text-white px-4 py-2 rounded"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  className="bg-orange-500 text-white px-4 py-2 rounded"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
+      <Modal
+        open={showForm}
+        title="Add Student"
+        onClose={() => setShowForm(false)}
+        maxWidthClassName="max-w-2xl"
+        footer={
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className={cx(ui.btnBase, ui.btnSoft)}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="studentForm"
+              className={cx(ui.btnBase, ui.btnPrimary)}
+            >
+              Save Student
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <form id="studentForm" onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-slate-700">Full Name</label>
+            <input
+              type="text"
+              name="name"
+              placeholder="e.g. Rahul Sharma"
+              value={formData.name}
+              onChange={handleChange}
+              className={ui.input}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Enrollment No</label>
+            <input
+              type="text"
+              name="enrollment"
+              placeholder="e.g. ENR001"
+              value={formData.enrollment}
+              onChange={handleChange}
+              className={ui.input}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+            <input
+              type="email"
+              name="email"
+              placeholder="e.g. student@mail.com"
+              value={formData.email}
+              onChange={handleChange}
+              className={ui.input}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Course</label>
+            <input
+              type="text"
+              name="course"
+              placeholder="e.g. BCA"
+              value={formData.course}
+              onChange={handleChange}
+              className={ui.input}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Department</label>
+            <input
+              type="text"
+              name="department"
+              placeholder="e.g. Computer Science"
+              value={formData.department}
+              onChange={handleChange}
+              className={ui.input}
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-slate-700">Result</label>
+            <select
+              name="result"
+              value={formData.result}
+              onChange={handleChange}
+              className={ui.select}
+            >
+              <option value="">Select Result</option>
+              <option value="Pass">Pass</option>
+              <option value="Fail">Fail</option>
+            </select>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
 
-/* VIEW MODAL */
-function StudentModal({ student, onClose }) {
+function StudentDetails({ student }) {
   return (
-    <div className="fixed inset-0 bg-black/30 flex justify-center items-center">
-      <div className="bg-white w-[90%] max-w-3xl rounded-xl p-6">
+    <div className="space-y-5">
+      <Section title="Basic Info">
+        <Info label="Name" value={student.name} />
+        <Info label="Enrollment" value={student.enrollment} />
+        <Info label="Email" value={student.email} />
+      </Section>
 
-        <h2 className="text-xl font-bold mb-4">Student Details</h2>
-
-        <Section title="Basic Info">
-          <Info label="Name" value={student.name} />
-          <Info label="Enrollment" value={student.enrollment} />
-          <Info label="Email" value={student.email} />
-        </Section>
-
-        <Section title="Academic Info">
-          <Info label="Course" value={student.course} />
-          <Info label="Department" value={student.department} />
-          <Info label="Result" value={student.result} />
-        </Section>
-
-        <button
-          onClick={onClose}
-          className="mt-4 bg-gray-800 text-white px-4 py-2 rounded"
-        >
-          Close
-        </button>
-      </div>
+      <Section title="Academic Info">
+        <Info label="Course" value={student.course} />
+        <Info label="Department" value={student.department} />
+        <Info label="Result" value={student.result} />
+      </Section>
     </div>
   );
 }
@@ -278,16 +296,17 @@ function StudentModal({ student, onClose }) {
 function Section({ title, children }) {
   return (
     <div className="mb-4">
-      <h3 className="font-semibold mb-2">{title}</h3>
-      <div className="grid grid-cols-2 gap-2">{children}</div>
+      <h3 className="font-semibold mb-2 text-slate-900">{title}</h3>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{children}</div>
     </div>
   );
 }
 
 function Info({ label, value }) {
   return (
-    <p>
-      <strong>{label}:</strong> {value || "N/A"}
-    </p>
+    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="text-sm font-semibold text-slate-900">{value || "N/A"}</p>
+    </div>
   );
 }

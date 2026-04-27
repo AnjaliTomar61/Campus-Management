@@ -8,11 +8,13 @@ import {
   Calendar,
   BarChart3,
   BookMarked,
-  LogOut
+  LogOut,
 } from "lucide-react";
+import { DashboardSidebarShell } from "../dashboard/DashboardSidebarShell";
+import { cx, ui, dashNavLinkClass } from "../../lib/ui";
 
 const menuItems = [
-  { name: "Dashboard", path: "/studentdashboard", icon: LayoutDashboard },
+  { name: "Dashboard", path: "/studentdashboard", icon: LayoutDashboard, end: true },
   { name: "Courses", path: "courses", icon: BookOpen },
   { name: "Attendance", path: "attendance", icon: ClipboardCheck },
   { name: "Marks", path: "marks", icon: BarChart3 },
@@ -22,56 +24,47 @@ const menuItems = [
   { name: "Timetable", path: "timetable", icon: Calendar },
 ];
 
-export default function StudentSidebar() {
+export default function StudentSidebar({ open, onClose }) {
+  const logout = () => {
+    localStorage.clear();
+    window.location.href = "/";
+  };
+
   return (
-    <div className="h-screen flex">
-
-      {/* Sidebar */}
-      <div className="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col p-4 shadow-xl">
-
-        {/* Logo */}
-        <h1 className="text-xl font-bold text-orange-400 mb-8 text-center">
-          Student Panel
-        </h1>
-
-        {/* Menu */}
-        <nav className="flex flex-col gap-2">
-          {menuItems.map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={index}
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 p-3 rounded-xl transition-all duration-300
-                  ${
-                    isActive
-                      ? "bg-orange-400 text-black shadow-md scale-[1.02]"
-                      : "hover:bg-slate-700 hover:pl-4"
-                  }`
-                }
-              >
-                <Icon size={20} />
-                <span>{item.name}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        {/* Logout */}
+    <DashboardSidebarShell
+      open={open}
+      onClose={onClose}
+      title="Student portal"
+      subtitle="Your campus workspace"
+      footer={
         <button
-          onClick={() => {
-            localStorage.clear();
-            window.location.href = "/";
-          }}
-          className="flex items-center gap-3 p-3 rounded-xl mt-auto hover:bg-red-500 transition"
+          type="button"
+          onClick={logout}
+          className={cx(
+            ui.btnBase,
+            "w-full justify-center border border-white/15 bg-white/5 py-2.5 text-sm text-white hover:border-red-300/40 hover:bg-red-600/90"
+          )}
         >
-          <LogOut size={20} />
-          <span>Logout</span>
+          <LogOut className="h-4 w-4" aria-hidden />
+          Log out
         </button>
-
-      </div>
-
-    </div>
+      }
+    >
+      {menuItems.map((item) => {
+        const Icon = item.icon;
+        return (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            end={item.end}
+            onClick={() => onClose?.()}
+            className={({ isActive }) => dashNavLinkClass(isActive)}
+          >
+            <Icon className="h-4.5 w-4.5 shrink-0 opacity-90" aria-hidden />
+            <span className="truncate">{item.name}</span>
+          </NavLink>
+        );
+      })}
+    </DashboardSidebarShell>
   );
 }

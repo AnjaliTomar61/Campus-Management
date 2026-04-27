@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { cx, ui } from "../../lib/ui";
 
 export default function AdminAttendance() {
   const [search, setSearch] = useState("");
@@ -44,42 +45,47 @@ export default function AdminAttendance() {
     students.reduce((acc, s) => acc + s.attendance, 0) / students.length;
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className={cx("p-4 sm:p-6", ui.page)}>
 
-      <h1 className="text-2xl font-bold mb-6">Attendance Dashboard</h1>
+      <div className="mb-6">
+        <h1 className={ui.h1}>Attendance Dashboard</h1>
+        <p className="text-sm text-slate-500">
+          Track overall attendance and view status for a selected date.
+        </p>
+      </div>
 
       {/* TOP CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
-        <Card title="Total Students" value={students.length} />
-        <Card title="Avg Attendance" value={`${totalAttendance.toFixed(1)}%`} />
-        <Card title="Today Date" value={new Date().toLocaleDateString()} />
+        <InfoCard title="Total Students" value={students.length} />
+        <InfoCard title="Avg Attendance" value={`${totalAttendance.toFixed(1)}%`} />
+        <InfoCard title="Today Date" value={new Date().toLocaleDateString()} />
 
       </div>
 
       {/* FILTER + SEARCH */}
-      <div className="bg-white p-4 rounded-xl shadow mb-6 flex flex-wrap gap-3 items-center">
+      <div className={cx(ui.card, "p-4 mb-6 flex flex-wrap gap-3 items-center")}>
 
         <input
           type="text"
           placeholder="Search by Enrollment No"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border p-2 rounded w-60"
+          className={cx(ui.input, "w-full sm:w-72")}
         />
 
         <input
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          className="border p-2 rounded"
+          className={cx(ui.input, "w-full sm:w-auto")}
         />
 
       </div>
 
       {/* GENDER CHART */}
-      <div className="bg-white p-5 rounded-xl shadow mb-6">
-        <h2 className="font-semibold mb-4">Boys vs Girls</h2>
+      <div className={cx(ui.card, "p-5 mb-6")}>
+        <h2 className={cx(ui.h2, "mb-4")}>Boys vs Girls</h2>
 
         <div className="space-y-3">
           <Bar label="Boys" value={boys} total={students.length} color="bg-blue-500" />
@@ -88,53 +94,49 @@ export default function AdminAttendance() {
       </div>
 
       {/* STUDENT TABLE */}
-      <div className="bg-white rounded-xl shadow overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className="bg-gray-200 text-sm">
-            <tr>
-              <th className="p-3">Name</th>
-              <th>Enrollment</th>
-              <th>Course</th>
-              <th>Dept</th>
-              <th>Attendance %</th>
-              <th>Status (Selected Date)</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredStudents.map((stu) => (
-              <tr key={stu.id} className="border-t hover:bg-gray-50">
-                <td className="p-3">{stu.name}</td>
-                <td>{stu.enrollment}</td>
-                <td>{stu.course}</td>
-                <td>{stu.department}</td>
-
-                <td>
-                  <span className="font-semibold">
-                    {stu.attendance}%
-                  </span>
-                </td>
-
-                <td>
-                  {selectedDate
-                    ? stu.records[selectedDate] || "N/A"
-                    : "Select Date"}
-                </td>
+      <div className={ui.dashTableCard}>
+        <div className={ui.dashTableScroller}>
+          <table className={cx(ui.dashTable, "min-w-[860px]")}>
+            <thead>
+              <tr className={ui.dashTableHead}>
+                <th className={ui.dashTableTh}>Name</th>
+                <th className={ui.dashTableTh}>Enrollment</th>
+                <th className={ui.dashTableTh}>Course</th>
+                <th className={ui.dashTableTh}>Dept</th>
+                <th className={ui.dashTableTh}>Attendance %</th>
+                <th className={ui.dashTableTh}>Status (selected date)</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {filteredStudents.map((stu) => (
+                <tr key={stu.id} className={ui.dashTableRow}>
+                  <td className={ui.dashTableTd}>{stu.name}</td>
+                  <td className={ui.dashTableTd}>{stu.enrollment}</td>
+                  <td className={ui.dashTableTd}>{stu.course}</td>
+                  <td className={ui.dashTableTd}>{stu.department}</td>
+                  <td className={ui.dashTableTd}>
+                    <span className="font-semibold">{stu.attendance}%</span>
+                  </td>
+                  <td className={ui.dashTableTd}>
+                    {selectedDate ? stu.records[selectedDate] || "N/A" : "Select date"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 }
 
 /* CARD */
-function Card({ title, value }) {
+function InfoCard({ title, value }) {
   return (
-    <div className="bg-white p-4 rounded-xl shadow text-center">
-      <h3 className="text-gray-500 text-sm">{title}</h3>
-      <p className="text-xl font-bold">{value}</p>
+    <div className={cx("p-5 text-center", ui.card)}>
+      <h3 className="text-slate-500 text-sm">{title}</h3>
+      <p className="text-xl font-bold text-slate-900">{value}</p>
     </div>
   );
 }

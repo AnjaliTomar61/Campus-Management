@@ -1,101 +1,96 @@
-import { useState } from "react";
-import { LogOut, User } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { LogOut, User, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logout } from "../../store/authSlice";
+import { cx, ui } from "../../lib/ui";
 
-const FacultyHeader = () => {
+export default function FacultyHeader({ onOpenSidebar }) {
   const facultyName = "Dr. Sharma";
   const lastLogin = "08 Apr 2026, 10:30 PM";
 
   const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const close = (e) => {
+      if (!menuRef.current?.contains(e.target)) setOpen(false);
+    };
+    if (open) window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [open]);
 
   const handleProfile = () => {
-    navigate("/faculty/profile");
+    navigate("/facultydashboard/profile");
     setOpen(false);
   };
 
   const handleLogout = () => {
-    alert("Logged Out");
+    dispatch(logout());
+    navigate("/");
   };
 
   return (
-    <header
-      className="w-full px-3.5 py-3 flex items-center justify-between shadow-md relative"
-      style={{ backgroundColor: "rgb(45, 79, 109)", color: "white" }}
-    >
-      
-      {/* Left Section */}
-      <div>
-        <h1 className="text-xl font-semibold">
-          Welcome,{" "}
-          <span style={{ color: "rgb(247, 178, 5)" }}>
-            {facultyName}
-          </span>{" "}
-          👋
-        </h1>
-        <p className="text-sm opacity-80">
-          Last Login: {lastLogin}
-        </p>
+    <header className={ui.dashHeader}>
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        {onOpenSidebar ? (
+          <button
+            type="button"
+            className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 shadow-sm transition hover:bg-slate-100 md:hidden"
+            onClick={onOpenSidebar}
+            aria-label="Open navigation menu"
+          >
+            <Menu className="h-5 w-5" aria-hidden />
+          </button>
+        ) : null}
+        <div className="min-w-0">
+          <h1 className={ui.dashHeaderTitle}>
+            Welcome,{" "}
+            <span className="text-(--brand-blue)">{facultyName}</span>
+          </h1>
+          <p className={ui.dashHeaderMeta}>Last login · {lastLogin}</p>
+        </div>
       </div>
 
-      {/* Right Section */}
-      <div className="relative">
-        
-        {/* Profile */}
-        <div
-          onClick={() => setOpen(!open)}
-          className="flex items-center gap-3 cursor-pointer"
+      <div className="relative shrink-0" ref={menuRef}>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-2 shadow-sm transition hover:border-slate-300 sm:pr-2.5"
         >
-          {/* Profile Image */}
           <img
-            src="https://i.pravatar.cc/40" // dummy image
-            alt="profile"
-            className="w-10 h-10 rounded-full border-2"
-            style={{ borderColor: "rgb(247, 178, 5)" }}
+            src="https://i.pravatar.cc/40"
+            alt=""
+            className="h-9 w-9 rounded-full border-2 border-amber-300/80 object-cover"
           />
+          <span className="hidden max-w-[9rem] truncate text-sm font-medium text-slate-800 md:block">
+            {facultyName}
+          </span>
+        </button>
 
-          <span className="hidden md:block">{facultyName}</span>
-        </div>
-
-        {/* Dropdown */}
-        {open && (
-          <div className="absolute right-0 mt-3 w-44 bg-white text-black rounded-lg shadow-lg overflow-hidden">
-            
-            {/* View Profile */}
+        {open ? (
+          <div className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
             <button
+              type="button"
               onClick={handleProfile}
-              className="w-full flex items-center gap-2 px-4 py-2 transition"
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "rgb(247, 178, 5)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "white")
-              }
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
             >
-              <User size={18} />
-              View Profile
+              <User className="h-4 w-4 text-(--brand-blue)" aria-hidden />
+              View profile
             </button>
-
-            {/* Logout */}
             <button
+              type="button"
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-4 py-2 transition"
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "rgb(247, 178, 5)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "white")
-              }
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50"
             >
-              <LogOut size={18} />
-              Logout
+              <LogOut className="h-4 w-4" aria-hidden />
+              Log out
             </button>
-
           </div>
-        )}
+        ) : null}
       </div>
     </header>
   );
-};
-
-export default FacultyHeader;
+}

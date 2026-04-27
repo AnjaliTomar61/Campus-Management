@@ -1,5 +1,6 @@
 import { useState } from "react";
-import axios from "axios";
+import { api } from "../../lib/apiClient";
+import { cx, ui } from "../../lib/ui";
 
 export default function FacultyForm() {
   const [formData, setFormData] = useState({
@@ -49,12 +50,11 @@ export default function FacultyForm() {
     }
 
     try {
-      const res = await axios.post(
-        "http://localhost:3000/api/faculty/create",
-        formData
-      );
+      await api.post("/api/faculty/create", formData, {
+        meta: { successMessage: "Faculty created successfully." },
+      });
 
-      setSuccess("Faculty created successfully");
+      setSuccess("Faculty created successfully.");
       setError("");
 
       // reset form
@@ -66,20 +66,25 @@ export default function FacultyForm() {
         role: "Lecturer",
       });
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong");
+      setError(err?.message || "Something went wrong");
       setSuccess("");
     }
   };
 
   return (
-    <div className="flex items-center justify-center bg-gray-100">
+    <div className={cx("flex items-center justify-center p-4 sm:p-6", ui.page)}>
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-lg"
+        className={cx(ui.card, "w-full max-w-xl p-6 sm:p-8")}
       >
-        <h2 className="text-2xl font-bold mb-6 text-center">
-          Faculty Registration (Admin)
-        </h2>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-slate-900 text-center">
+            Faculty Registration
+          </h2>
+          <p className="mt-1 text-center text-sm text-slate-500">
+            Create a faculty profile and assign a department & role.
+          </p>
+        </div>
 
         {error && <p className="text-red-500 mb-3">{error}</p>}
         {success && <p className="text-green-500 mb-3">{success}</p>}
@@ -91,7 +96,7 @@ export default function FacultyForm() {
           placeholder="Employee ID *"
           value={formData.employeeId}
           onChange={handleChange}
-          className="w-full mb-4 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(46,71,125)]"
+          className={cx(ui.input, "mb-4")}
 />
         {/* Name */}
         <input
@@ -100,7 +105,7 @@ export default function FacultyForm() {
           placeholder="Full Name *"
           value={formData.name}
           onChange={handleChange}
-          className="w-full mb-4 p-3 border rounded-lg"
+          className={cx(ui.input, "mb-4")}
         />
 
         {/* Email */}
@@ -110,7 +115,7 @@ export default function FacultyForm() {
           placeholder="Official Email *"
           value={formData.officialEmail}
           onChange={handleChange}
-          className="w-full mb-4 p-3 border rounded-lg"
+          className={cx(ui.input, "mb-4")}
         />
 
         {/* Department */}
@@ -118,7 +123,7 @@ export default function FacultyForm() {
   name="department"
   value={formData.department}
   onChange={handleChange}
-  className="w-full mb-4 p-3 border rounded-lg"
+  className={cx(ui.select, "mb-4")}
   required
 >
   <option value="">Select Department *</option>
@@ -136,7 +141,7 @@ export default function FacultyForm() {
           name="role"
           value={formData.role}
           onChange={handleChange}
-          className="w-full mb-4 p-3 border rounded-lg"
+          className={cx(ui.select, "mb-6")}
         >
           <option value="Lecturer">Lecturer</option>
           <option value="Assistant Professor">Assistant Professor</option>
@@ -147,7 +152,7 @@ export default function FacultyForm() {
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-[#0F172A] text-white py-3 rounded-lg hover:bg-orange-400 transition"
+          className={cx(ui.btnBase, ui.btnPrimary, "w-full")}
         >
           Create Faculty
         </button>

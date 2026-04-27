@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { cx, ui } from "../lib/ui";
 
 const CounterBox = ({ target, label, start }) => {
   const [count, setCount] = useState(0);
@@ -24,11 +25,14 @@ const CounterBox = ({ target, label, start }) => {
   }, [start, target]);
 
   return (
-    <div className="text-center">
-      <h2 className="text-4xl md:text-5xl font-bold text-white">
-        {count}+
-      </h2>
-      <p className="text-yellow-400 font-semibold mt-2">{label}</p>
+    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-center backdrop-blur-sm sm:px-5 sm:py-6">
+      <p className="text-3xl font-bold tabular-nums text-white sm:text-4xl md:text-5xl">
+        {count}
+        <span className="text-amber-300">+</span>
+      </p>
+      <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-amber-200/95 sm:text-sm">
+        {label}
+      </p>
     </div>
   );
 };
@@ -44,46 +48,52 @@ export default function StudySection() {
       const top = sectionRef.current.offsetTop;
       const height = window.innerHeight;
 
-      if (window.scrollY > top - height + 100) {
+      if (window.scrollY > top - height + 120) {
         setStart(true);
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
     <section
       ref={sectionRef}
-      className="relative h-[400px] bg-cover bg-center"
-      style={{
-        backgroundImage:
-          "url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1')",
-      }}
+      className="relative min-h-[420px] w-full overflow-hidden bg-slate-900 sm:min-h-[440px] lg:min-h-[400px]"
     >
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-blue-950/80 flex items-center">
-        <div className="max-w-7xl mx-auto px-6 w-full flex flex-col md:flex-row justify-between items-center text-white">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1')",
+        }}
+        aria-hidden
+      />
+      <div
+        className="absolute inset-0 bg-linear-to-br from-(--brand-blue-2)/92 via-(--brand-blue)/88 to-slate-950/90"
+        aria-hidden
+      />
 
-          {/* Left Content */}
-          <div className="md:w-1/2">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              STUDY AT SVVV
-            </h1>
-            <p className="text-sm md:text-base leading-relaxed">
-              Shri Vaishnav Vidyapeeth Trust believes in taking the nation forward
-              by improving the quality of life of its citizens by continuously
-              working in the sphere of education, health and environment.
-            </p>
-          </div>
+      <div className={cx(ui.landingContainer, "relative z-10 flex min-h-[420px] flex-col justify-center gap-10 py-14 sm:min-h-[440px] sm:py-16 lg:min-h-[400px] lg:flex-row lg:items-center lg:gap-16 lg:py-20")}>
+        <div className="max-w-xl lg:w-1/2">
+          <p className="text-sm font-semibold uppercase tracking-widest text-amber-300/90">
+            Why SVVV
+          </p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            Study at SVVV
+          </h2>
+          <p className="mt-4 text-sm leading-relaxed text-slate-200 sm:text-base">
+            Shri Vaishnav Vidyapeeth Trust works to improve quality of life through education,
+            health, and environment—so graduates are ready for careers and community impact.
+          </p>
+        </div>
 
-          {/* Right Counters */}
-          <div className="md:w-1/2 flex justify-around mt-6 md:mt-0 w-full">
-            <CounterBox target={30} label="PROGRAMMES" start={start} />
-            <CounterBox target={150} label="ACHIEVEMENTS" start={start} />
-            <CounterBox target={2000} label="PLACEMENTS" start={start} />
-          </div>
+        <div className="grid w-full grid-cols-3 gap-2 sm:gap-4 lg:w-1/2 lg:max-w-xl">
+          <CounterBox target={30} label="Programmes" start={start} />
+          <CounterBox target={150} label="Achievements" start={start} />
+          <CounterBox target={2000} label="Placements" start={start} />
         </div>
       </div>
     </section>

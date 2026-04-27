@@ -1,35 +1,30 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { cx, ui } from "../lib/ui";
 
-export default function SVVVSection() {
+const notices = [
+  "Revised Fee Submission Notice for 1st Year (Jan–June 2026)",
+  "Revised Fee Submission Notice (Jan–June 2026)",
+  "Qualifying Criteria for PhD Entrance Examination 2025",
+  "Access to National Digital Library",
+  "Shri Tarkeshwar Singh (Retired Principal District Judge)",
+  "Exam Notice - Ph.D Course Work Center and Timings",
+];
+
+export default function WelcomeAndNotice() {
   const [paused, setPaused] = useState(false);
   const scrollRef = useRef(null);
-
-  const notices = [
-    "Revised Fee Submission Notice for 1st Year (Jan–June 2026)",
-    "Revised Fee Submission Notice (Jan–June 2026)",
-    "Qualifying Criteria for PhD Entrance Examination 2025",
-    "Access to National Digital Library",
-    "Shri Tarkeshwar Singh (Retired Principal District Judge)",
-    "Exam Notice - Ph.D Course Work Center and Timings",
-  ];
 
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
 
-    // ✅ Start from TOP
     container.scrollTop = 0;
 
     const interval = setInterval(() => {
       if (!paused) {
-        container.scrollTop += 1; // move DOWN (top → bottom)
-
-        // ✅ When reached bottom → reset to top
-        if (
-          container.scrollTop + container.clientHeight >=
-          container.scrollHeight
-        ) {
+        container.scrollTop += 1;
+        if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
           container.scrollTop = 0;
         }
       }
@@ -39,56 +34,55 @@ export default function SVVVSection() {
   }, [paused]);
 
   return (
-    <div className="bg-gray-100 py-8 px-4 sm:px-6 md:px-12 lg:px-20">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-
-        {/* LEFT SECTION */}
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-blue-900 border-b-4 border-yellow-500 inline-block pb-2">
-            Welcome to SVVV Indore
-          </h2>
-
-          <p className="mt-4 text-sm sm:text-base text-gray-700 leading-relaxed">
-            1884 is the landmark year as the foundation stone was laid 142 years ago.
+    <div className="py-12 sm:py-16 lg:py-20">
+      <div className={cx(ui.landingContainer, "grid grid-cols-1 items-start gap-10 lg:grid-cols-2 lg:gap-14")}>
+        <div className="max-w-xl">
+          <h2 className={ui.landingSectionTitle}>Welcome to SVVV Indore</h2>
+          <div className={ui.landingSectionAccent} aria-hidden />
+          <p className="mt-6 text-base leading-relaxed text-slate-600 sm:text-[1.05rem]">
+            1884 marks a landmark year—the foundation was laid more than a century ago. Today,
+            SVVV blends heritage with modern programmes, research, and industry-aligned learning
+            on the Indore–Ujjain corridor.
           </p>
-
-          <Link to="/about">
-            <button className="mt-6 bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-2 shadow-md">
-              READ MORE
-            </button>
+          <Link
+            to="/about"
+            className={cx(
+              ui.btnBase,
+              "mt-8 inline-flex min-h-11 w-fit bg-amber-400 px-6 text-slate-950 hover:bg-amber-300"
+            )}
+          >
+            Read more
           </Link>
         </div>
 
-        {/* RIGHT SECTION */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white text-center py-3 font-semibold">
-            LATEST UPDATE
+        <aside className="overflow-hidden rounded-2xl bg-white brand-ring">
+          <div className="bg-linear-to-r from-(--brand-blue-2) to-(--brand-blue) px-4 py-3.5 text-center text-sm font-semibold tracking-wide text-white sm:text-base">
+            Latest updates
           </div>
 
           <div
             ref={scrollRef}
-            className="h-52 sm:h-64 md:h-72 overflow-hidden px-4 sm:px-6 py-3 sm:py-4 space-y-4"
+            className="h-52 space-y-4 overflow-y-auto scroll-smooth px-4 py-4 sm:h-60 sm:px-5 sm:py-5 md:h-72 [scrollbar-width:thin] [scrollbar-color:rgba(39,68,114,0.35)_transparent]"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
           >
             {[...notices, ...notices, ...notices].map((notice, i) => (
               <div
                 key={i}
-                onMouseEnter={() => setPaused(true)}  // ✅ pause on hover
-                onMouseLeave={() => setPaused(false)} // ✅ resume
-                onClick={() => setPaused(true)}       // ✅ stop on click
-                className="group flex items-start gap-3 text-blue-900 cursor-pointer"
+                onClick={() => setPaused(true)}
+                className="group flex cursor-pointer items-start gap-3 rounded-lg px-1 py-0.5 transition hover:bg-slate-50"
               >
-                {/* dot */}
-                <span className="mt-2 h-2 w-2 bg-yellow-500 rounded-full"></span>
-
-                {/* text */}
-                <p className="text-sm sm:text-base group-hover:text-blue-600 transition">
+                <span
+                  className="mt-2 h-2 w-2 shrink-0 rounded-full bg-(--brand-accent)"
+                  aria-hidden
+                />
+                <p className="text-sm leading-snug text-slate-800 group-hover:text-(--brand-blue) sm:text-base">
                   {notice}
                 </p>
               </div>
             ))}
           </div>
-        </div>
-
+        </aside>
       </div>
     </div>
   );

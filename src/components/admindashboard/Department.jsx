@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "../../lib/apiClient";
+import Modal from "../common/Modal";
+import { cx, ui } from "../../lib/ui";
 
 export default function Department() {
   const [departments, setDepartments] = useState([]);
@@ -12,12 +14,10 @@ export default function Department() {
     description: "",
   });
 
-  const API = "http://localhost:3000/api/department";
-
   // 📄 Fetch departments
   const fetchDepartments = async () => {
     try {
-      const res = await axios.get(`${API}/all`);
+      const res = await api.get(`/api/department/all`);
       setDepartments(res.data.departments);
     } catch (err) {
       console.log(err);
@@ -36,7 +36,9 @@ export default function Department() {
   // 🔄 Toggle
   const handleToggle = async (id) => {
     try {
-      await axios.patch(`${API}/toggle/${id}`);
+      await api.patch(`/api/department/toggle/${id}`, null, {
+        meta: { successMessage: "Department status updated." },
+      });
       fetchDepartments();
     } catch (error) {
       console.log(error);
@@ -49,13 +51,16 @@ export default function Department() {
 
     try {
       if (editId) {
-        await axios.put(`${API}/${editId}`, formData);
+        await api.put(`/api/department/${editId}`, formData, {
+          meta: { successMessage: "Department updated successfully." },
+        });
       } else {
-        await axios.post(`${API}/create`, formData);
+        await api.post(`/api/department/create`, formData, {
+          meta: { successMessage: "Department created successfully." },
+        });
       }
 
-      setShowForm(false);
-      setEditId(null);
+      closeForm();
       setFormData({
         name: "",
         code: "",
@@ -68,10 +73,28 @@ export default function Department() {
     }
   };
 
+  const openCreate = () => {
+    setShowForm(true);
+    setEditId(null);
+    setFormData({ name: "", code: "", description: "" });
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditId(null);
+  };
+
   // 🗑 Delete
   const handleDelete = async (id) => {
     if (window.confirm("Delete this department?")) {
-      await axios.delete(`${API}/${id}`);
+      try {
+        await api.delete(`/api/department/${id}`, {
+          meta: { successMessage: "Department deleted." },
+        });
+      } catch (e) {
+        // toast already handled globally
+        console.log(e);
+      }
       fetchDepartments();
     }
   };
@@ -89,120 +112,156 @@ export default function Department() {
   };
 
   return (
-    <div className="p-6">
+    <div className={cx("p-4 sm:p-6", ui.page)}>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Departments</h1>
+      <div className={cx(ui.cardHeader, "mb-6")}>
+        <div>
+          <h1 className={ui.h1}>Departments</h1>
+          <p className="text-sm text-slate-500">
+            Create, update, enable/disable and manage departments.
+          </p>
+        </div>
 
         <button
-          onClick={() => {
-            setShowForm(!showForm);
-            setEditId(null);
-          }}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          onClick={openCreate}
+          className={cx(ui.btnBase, ui.btnAccent)}
         >
           + Add Department
         </button>
       </div>
 
-      {/* Form */}
-      {showForm && (
+      {/* Form Modal */}
+      <Modal
+        open={showForm}
+        title={editId ? "Update Department" : "Create Department"}
+        onClose={closeForm}
+        maxWidthClassName="max-w-xl"
+        footer={
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={closeForm}
+              className={cx(ui.btnBase, ui.btnSoft)}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="departmentForm"
+              className={cx(ui.btnBase, ui.btnPrimary)}
+            >
+              {editId ? "Save Changes" : "Create Department"}
+            </button>
+          </div>
+        }
+      >
         <form
+          id="departmentForm"
           onSubmit={handleSubmit}
-          className="bg-white p-6 rounded shadow mb-6 grid grid-cols-2 gap-4"
+          className="grid grid-cols-1 gap-4"
         >
-          <input
-            name="name"
-            placeholder="Department Name"
-            value={formData.name}
-            onChange={handleChange}
-            className="border p-2 rounded"
-            required
-          />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Department Name
+              </label>
+              <input
+                name="name"
+                placeholder="e.g. Computer Science"
+                value={formData.name}
+                onChange={handleChange}
+                className={ui.input}
+                required
+              />
+            </div>
 
-          <input
-            name="code"
-            placeholder="Department Code"
-            value={formData.code}
-            onChange={handleChange}
-            className="border p-2 rounded"
-            required
-          />
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Code
+              </label>
+              <input
+                name="code"
+                placeholder="e.g. CSE"
+                value={formData.code}
+                onChange={handleChange}
+                className={ui.input}
+                required
+              />
+            </div>
+          </div>
 
-          <input
-            name="description"
-            placeholder="Description"
-            value={formData.description}
-            onChange={handleChange}
-            className="border p-2 rounded col-span-2"
-          />
-
-          <button className="col-span-2 bg-green-500 text-white py-2 rounded">
-            {editId ? "Update Department" : "Create Department"}
-          </button>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Description (optional)
+            </label>
+            <input
+              name="description"
+              placeholder="Short description about this department"
+              value={formData.description}
+              onChange={handleChange}
+              className={ui.input}
+            />
+          </div>
         </form>
-      )}
+      </Modal>
 
       {/* Table */}
-      <div className="bg-white shadow rounded">
-        <table className="w-full text-left">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="p-3">Name</th>
-              <th className="p-3">Code</th>
-              <th className="p-3">Description</th>
-              <th className="p-3">Status</th> {/* ✅ FIXED POSITION */}
-              <th className="p-3">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {departments.map((d) => (
-              <tr key={d._id} className="border-t">
-                <td className="p-3">{d.name}</td>
-                <td className="p-3">{d.code}</td>
-                <td className="p-3">{d.description || "-"}</td>
-
-                {/* ✅ STATUS COLUMN (correct position) */}
-                <td className="p-3">
-                  {d.isActive ? (
-                    <span className="text-green-600 font-semibold">
-                      Active
-                    </span>
-                  ) : (
-                    <span className="text-red-500 font-semibold">
-                      Inactive
-                    </span>
-                  )}
-                </td>
-
-                {/* ✅ ACTIONS */}
-                <td className="p-3 flex gap-2">
-                  <button
-                    onClick={() => handleEdit(d)}
-                    className="bg-yellow-400 px-3 py-1 rounded"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(d._id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded"
-                  >
-                    Delete
-                  </button>
-
-                  <button
-                    onClick={() => handleToggle(d._id)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded"
-                  >
-                    {d.isActive ? "Disable" : "Enable"}
-                  </button>
-                </td>
+      <div className={ui.dashTableCard}>
+        <div className={ui.dashTableScroller}>
+          <table className={cx(ui.dashTable, "min-w-[860px]")}>
+            <thead>
+              <tr className={ui.dashTableHead}>
+                <th className={ui.dashTableTh}>Name</th>
+                <th className={ui.dashTableTh}>Code</th>
+                <th className={ui.dashTableTh}>Description</th>
+                <th className={ui.dashTableTh}>Status</th>
+                <th className={ui.dashTableTh}>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {departments.map((d) => (
+                <tr key={d._id} className={ui.dashTableRow}>
+                  <td className={ui.dashTableTd}>{d.name}</td>
+                  <td className={ui.dashTableTd}>{d.code}</td>
+                  <td className={ui.dashTableTd}>{d.description || "-"}</td>
+                  <td className={ui.dashTableTd}>
+                    {d.isActive ? (
+                      <span className="font-semibold text-green-600">Active</span>
+                    ) : (
+                      <span className="font-semibold text-red-500">Inactive</span>
+                    )}
+                  </td>
+                  <td className={ui.dashTableTd}>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(d)}
+                        className={cx(ui.btnBase, ui.btnSoft, "px-3 py-1.5")}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(d._id)}
+                        className={cx(ui.btnBase, ui.btnDanger, "px-3 py-1.5")}
+                      >
+                        Delete
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleToggle(d._id)}
+                        className={cx(ui.btnBase, ui.btnPrimary, "px-3 py-1.5")}
+                      >
+                        {d.isActive ? "Disable" : "Enable"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

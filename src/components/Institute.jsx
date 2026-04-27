@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cx, ui } from "../lib/ui";
 
 const data = [
   {
@@ -47,7 +49,7 @@ export default function Institutes() {
   };
 
   const getVisibleData = () => {
-    let arr = [];
+    const arr = [];
     for (let i = 0; i < visibleCards; i++) {
       arr.push(data[(index + i) % data.length]);
     }
@@ -55,76 +57,82 @@ export default function Institutes() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10">
+    <section className="py-12 sm:py-16 lg:py-20">
+      <div className={ui.landingContainer}>
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className={ui.landingSectionTitle}>Our institutes</h2>
+            <div className={ui.landingSectionAccent} aria-hidden />
+            <p className="mt-4 max-w-2xl text-sm text-slate-600 sm:text-base">
+              Constituent institutes across disciplines—each with focused programmes and faculty.
+            </p>
+          </div>
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold border-b-4 border-yellow-500 inline-block">
-          Our Institutes
-        </h2>
+          <div className="flex shrink-0 gap-2 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={prevSlide}
+              aria-label="Previous institutes"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-800 transition hover:border-(--brand-blue) hover:bg-white hover:text-(--brand-blue)"
+            >
+              <ChevronLeft className="h-5 w-5" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={nextSlide}
+              aria-label="Next institutes"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-800 transition hover:border-(--brand-blue) hover:bg-white hover:text-(--brand-blue)"
+            >
+              <ChevronRight className="h-5 w-5" aria-hidden />
+            </button>
+          </div>
+        </div>
 
-        <div className="flex gap-3">
-          <button
-            onClick={prevSlide}
-            className="bg-yellow-500 px-4 py-2 rounded font-bold"
-          >
-            ←
-          </button>
-          <button
-            onClick={nextSlide}
-            className="bg-yellow-500 px-4 py-2 rounded font-bold"
-          >
-            →
-          </button>
+        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {getVisibleData().map((item) => (
+            <article
+              key={`${index}-${item.id}`}
+              className="group flex flex-col overflow-hidden rounded-2xl bg-white brand-ring transition hover:-translate-y-1 hover:shadow-[0_18px_45px_-22px_rgba(15,23,42,0.18)]"
+            >
+              <div className="relative aspect-4/3 overflow-hidden">
+                <img
+                  src={item.img}
+                  alt=""
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                />
+                <div
+                  className="absolute inset-0 bg-linear-to-t from-slate-950/70 via-slate-950/10 to-transparent opacity-80 transition group-hover:opacity-100"
+                  aria-hidden
+                />
+
+                <Link
+                  to="/institutes"
+                  className={cx(
+                    ui.btnBase,
+                    "absolute bottom-3 left-3 right-3 justify-center bg-amber-400 text-sm text-slate-950 opacity-0 shadow-lg transition group-hover:opacity-100 group-focus-within:opacity-100 sm:left-4 sm:right-auto sm:px-5"
+                  )}
+                >
+                  View institutes
+                </Link>
+              </div>
+
+              <div className="bg-linear-to-r from-(--brand-blue-2) to-(--brand-blue) px-3 py-3 text-center">
+                <h3 className="text-xs font-semibold leading-snug text-white sm:text-sm">{item.title}</h3>
+              </div>
+
+              <div className="px-3 py-3 text-center">
+                <p className="text-xs text-slate-600 sm:text-sm">{item.subtitle}</p>
+                <Link
+                  to="/institutes"
+                  className="mt-2 inline-block text-xs font-semibold text-(--brand-blue) hover:underline"
+                >
+                  All institutes →
+                </Link>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
-
-      {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-        {getVisibleData().map((item, i) => (
-          <div
-            key={i}
-            className="group bg-white shadow-lg rounded overflow-hidden transform transition hover:-translate-y-2"
-          >
-            {/* Image */}
-            <div className="relative overflow-hidden">
-              <img
-                src={item.img}
-                alt=""
-                className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition"></div>
-
-              {/* Read More Link */}
-              <Link
-                to={`/institute/${item.id}`}
-                className="
-                  absolute left-3 bottom-3
-                  bg-yellow-500 text-black font-semibold
-                  px-4 py-2 rounded shadow
-                  opacity-0 translate-y-4
-                  transition-all duration-300
-                  group-hover:opacity-100 group-hover:translate-y-0
-                "
-              >
-                Read More
-              </Link>
-            </div>
-
-            {/* Title */}
-            <div className="bg-blue-900 text-white text-center p-3">
-              <h3 className="text-sm font-semibold">{item.title}</h3>
-            </div>
-
-            {/* Subtitle */}
-            <div className="text-center p-2 text-gray-600 text-sm">
-              {item.subtitle}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    </section>
   );
 }

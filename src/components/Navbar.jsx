@@ -1,14 +1,35 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, Menu, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 export default function Navbar() {
   const [openMenu, setOpenMenu] = useState(null);
   const [subMenu, setSubMenu] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const toggleMenu = (menu) => {
     setOpenMenu(openMenu === menu ? null : menu);
     setSubMenu(null);
+  };
+
+  const scrollToId = async (id) => {
+    setOpenMenu(null);
+    setMobileOpen(false);
+
+    if (location.pathname !== "/") {
+      navigate("/");
+      // allow route to render
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+      return;
+    }
+
+    const el = document.getElementById(id);
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   // Close dropdown when clicking outside
@@ -52,13 +73,28 @@ export default function Navbar() {
             </button>
 
             {openMenu === "erp" && (
-              <div className="absolute right-0 mt-2 w-44 bg-white text-black shadow-lg rounded border z-[9999]">
-                <a href="#" className="block px-4 py-2 hover:bg-gray-100">
+              <div className="absolute right-0 mt-2 w-44 bg-white text-black shadow-lg rounded border z-9999">
+                <button
+                  type="button"
+                  onClick={() => navigate("/login?role=student")}
+                  className="w-full text-left block px-4 py-2 hover:bg-gray-100"
+                >
                   Student Login
-                </a>
-                <a href="#" className="block px-4 py-2 hover:bg-gray-100">
-                  Employee Login
-                </a>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/login?role=faculty")}
+                  className="w-full text-left block px-4 py-2 hover:bg-gray-100"
+                >
+                  Faculty Login
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/login?role=admin")}
+                  className="w-full text-left block px-4 py-2 hover:bg-gray-100"
+                >
+                  Admin Login
+                </button>
               </div>
             )}
           </div>
@@ -78,11 +114,16 @@ export default function Navbar() {
         <div className="flex items-center justify-even px-4 md:px-6 py-3">
 
           {/* Logo */}
-          <img
-            src="https://svvv.edu.in/images/logo.png"
-            alt="logo"
-            className="w-14 md:w-16"
-          />
+          <Link to="/" className="flex items-center gap-3">
+            <img
+              src="https://svvv.edu.in/images/logo.png"
+              alt="logo"
+              className="w-14 md:w-16"
+            />
+            <span className="hidden lg:block font-semibold tracking-wide">
+              Smart Campus
+            </span>
+          </Link>
 
           {/* Desktop Menu (UNCHANGED) */}
           <ul
@@ -100,19 +141,19 @@ export default function Navbar() {
               </button>
 
               {openMenu === "about" && (
-                <div className="absolute top-10 left-0 w-64 bg-white text-black shadow-lg rounded z-[9999]">
+                <div className="absolute top-10 left-0 w-64 bg-white text-black shadow-lg rounded z-9999">
 
-                  <a href="#" className="block px-4 py-2 hover:bg-gray-100">
-                    Shri Vaishnav Trusts
-                  </a>
-
-                  <a href="#" className="block px-4 py-2 hover:bg-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => scrollToId("about")}
+                    className="w-full text-left block px-4 py-2 hover:bg-gray-100"
+                  >
                     About University
-                  </a>
+                  </button>
 
-                  <a href="#" className="block px-4 py-2 hover:bg-gray-100">
+                  <Link to="/about" className="block px-4 py-2 hover:bg-gray-100">
                     Vision & Mission
-                  </a>
+                  </Link>
 
                   {/* Submenu */}
                   <div
@@ -125,28 +166,26 @@ export default function Navbar() {
                     </div>
 
                     {subMenu === "desk" && (
-                      <div className="absolute left-full top-0 w-52 bg-white shadow-lg z-[9999]">
-                        <a href="#" className="block px-4 py-2 hover:bg-gray-100">
+                      <div className="absolute left-full top-0 w-52 bg-white shadow-lg z-9999">
+                        <Link to="/about" className="block px-4 py-2 hover:bg-gray-100">
                           Chancellor
-                        </a>
-                        <a href="#" className="block px-4 py-2 hover:bg-gray-100">
+                        </Link>
+                        <Link to="/about" className="block px-4 py-2 hover:bg-gray-100">
                           Vice Chancellor
-                        </a>
+                        </Link>
                       </div>
                     )}
                   </div>
 
-                  <a href="#" className="block px-4 py-2 hover:bg-gray-100">
-                    Approval and Affiliation
-                  </a>
-
-                  <a href="#" className="block px-4 py-2 hover:bg-gray-100">
-                    SVVV Annual Report
-                  </a>
-
-                  <a href="#" className="block px-4 py-2 hover:bg-gray-100">
+                  <Link to="/about" className="block px-4 py-2 hover:bg-gray-100">
+                    Approval & Affiliation
+                  </Link>
+                  <Link to="/about" className="block px-4 py-2 hover:bg-gray-100">
+                    Annual Report
+                  </Link>
+                  <Link to="/about" className="block px-4 py-2 hover:bg-gray-100">
                     Administration
-                  </a>
+                  </Link>
 
                 </div>
               )}
@@ -160,7 +199,7 @@ export default function Navbar() {
   </button>
 
   {openMenu === "why" && (
-    <div className="absolute left-0 top-10 w-[900px] bg-gray-100 text-black shadow-xl rounded p-6 z-[9999]">
+    <div className="absolute left-0 top-10 w-[900px] bg-gray-100 text-black shadow-xl rounded p-6 z-9999">
 
       <div className="grid grid-cols-4 gap-6">
 
@@ -264,7 +303,7 @@ export default function Navbar() {
 
       {/* Dropdown */}
       {openMenu === "institute" && (
-        <div className="absolute md:absolute left-0 top-12 w-full md:w-[1000px] bg-gray-100 text-black shadow-xl rounded p-4 md:p-6 z-[9999]">
+        <div className="absolute md:absolute left-0 top-12 w-full md:w-[1000px] bg-gray-100 text-black shadow-xl rounded p-4 md:p-6 z-9999">
 
           {/* Desktop Grid */}
           <div className="hidden md:grid grid-cols-4 gap-6 text-sm">
@@ -413,25 +452,51 @@ export default function Navbar() {
 
 
             {/* Other Links */}
-            {[
-              // "Why SVVV",
-              // "Our Institute",
-              "Admission",
-              "Academics",
-              "Team",
-              "Campus Tours",
-              "NIRF",
-              "Contact",
-            ].map((item) => (
-              <li key={item}>
-                <a
-                  href="#"
-                  className="flex items-center gap-1 hover:text-yellow-400"
-                >
-                  {item} <ChevronDown size={14} />
-                </a>
-              </li>
-            ))}
+            <li>
+              <button
+                type="button"
+                onClick={() => scrollToId("home")}
+                className="hover:text-yellow-400"
+              >
+                Home
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => scrollToId("institutes")}
+                className="hover:text-yellow-400"
+              >
+                Institutes
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => scrollToId("news")}
+                className="hover:text-yellow-400"
+              >
+                News & Events
+              </button>
+            </li>
+            <li>
+              <Link to="/admission" className="hover:text-yellow-400">
+                Admission
+              </Link>
+            </li>
+            <li>
+              <Link to="/contact" className="hover:text-yellow-400">
+                Contact
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/login"
+                className="bg-yellow-400 text-black px-3 py-1 rounded hover:brightness-95 transition"
+              >
+                Login
+              </Link>
+            </li>
           </ul>
         </div>
 
@@ -458,18 +523,21 @@ export default function Navbar() {
             </div>
 
             {[
-              "Why SVVV",
-              "Our Institute",
-              "Admission",
-              "Academics",
-              "Team",
-              "Campus Tours",
-              "NIRF",
-              "Contact",
+              { label: "Home", action: () => scrollToId("home") },
+              { label: "Institutes", action: () => scrollToId("institutes") },
+              { label: "News & Events", action: () => scrollToId("news") },
+              { label: "Admission", action: () => navigate("/admission") },
+              { label: "Contact", action: () => navigate("/contact") },
+              { label: "Login", action: () => navigate("/login") },
             ].map((item) => (
-              <a key={item} className="block py-2">
-                {item}
-              </a>
+              <button
+                key={item.label}
+                type="button"
+                onClick={item.action}
+                className="block w-full text-left py-2"
+              >
+                {item.label}
+              </button>
             ))}
           </div>
         )}
