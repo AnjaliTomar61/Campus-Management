@@ -63,14 +63,14 @@ function App() {
         {/* <Route element={<ProtectedRoute roles={["student"]} />}> */}
           <Route path="/studentdashboard" element={<StudentLayout />}>
             <Route index element={<StudentDashboardContain />} />
-  <Route path="courses" element={<Courses />} />
+  {/* <Route path="courses" element={<Courses />} />
   <Route path="attendance" element={<Attendance />} />
   <Route path="marks" element={<Marks />} />
   <Route path="assignments" element={<Assignments />} />
   <Route path="results" element={<Results />} />
   <Route path="notice" element={<Notice />} />
   <Route path="timetable" element={<Timetable />} />
-  <Route path="profile" element={<StudentProfile />} />
+  <Route path="profile" element={<StudentProfile />} /> */}
           </Route>
         {/* </Route> */}
 
