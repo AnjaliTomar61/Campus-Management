@@ -8,7 +8,7 @@ import AdminAttendance from "./components/admindashboard/AdminAttendance";
 
 
 import FacultyDashboardContain from "./components/facultydashboard/FacultyDashboardContain"
-import FacultyDashboard from "./components/facultydashboard/Facultydashboard";
+import FacultyDashboard from "./components/facultydashboard/FacultyDashboard";
 import FacultyProfile from "./components/facultydashboard/FacultyProfile";
 // import Navbar from "./components/commoncomponents/Navbar"
 import LandingPage from "./pages/LandingPage"
