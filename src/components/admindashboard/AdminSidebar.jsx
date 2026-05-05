@@ -6,6 +6,7 @@ import {
   GraduationCap,
   LayoutGrid,
   CalendarRange,
+  BookOpen,
   ClipboardCheck,
   CalendarDays,
   Award,
@@ -30,6 +31,12 @@ const menuItems = [
     path: "/admindashboard/semesters",
     icon: CalendarRange,
     description: "Per-course semester structure",
+  },
+  {
+    name: "Subjects",
+    path: "/admindashboard/subjects",
+    icon: BookOpen,
+    description: "Course + semester subjects (with faculty)",
   },
   {
     name: "Attendance",
@@ -99,7 +106,7 @@ export default function AdminSidebar({ open, onClose }) {
               className={({ isActive }) =>
                 cx(
                   dashNavLinkClass(isActive),
-                  "!items-start gap-3 py-3.5 sm:py-3"
+                  "items-start! gap-3 py-3.5 sm:py-3"
                 )
               }
             >
