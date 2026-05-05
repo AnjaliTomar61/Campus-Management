@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { UserRound, Mail, Phone, GraduationCap } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { UserRound, Mail, Phone, GraduationCap, Award } from "lucide-react";
 import { api } from "../../lib/apiClient";
 import Modal from "../common/Modal";
 import { cx, ui } from "../../lib/ui";
@@ -53,6 +53,20 @@ function fmtGender(g) {
   return String(g).charAt(0).toUpperCase() + String(g).slice(1);
 }
 
+function emptyMarks() {
+  return { examTitle: "Mid Term", published: true, remarks: "", lines: [] };
+}
+
+function linesFromSubjects(subjects) {
+  return (Array.isArray(subjects) ? subjects : []).map((s) => ({
+    subject: s._id,
+    subjectLabel: "",
+    maxMarks: 100,
+    obtained: 0,
+    grade: "",
+  }));
+}
+
 export default function FacultyAssignedStudents() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +78,11 @@ export default function FacultyAssignedStudents() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
+  const [marksOpen, setMarksOpen] = useState(false);
+  const [marksLoading, setMarksLoading] = useState(false);
+  const [subjectOptions, setSubjectOptions] = useState([]);
+  const [marks, setMarks] = useState(emptyMarks());
+  const [marksSaving, setMarksSaving] = useState(false);
 
   const loadSemesters = useCallback(async (courseId) => {
     if (!courseId) {
@@ -149,6 +168,50 @@ export default function FacultyAssignedStudents() {
     setSelected(null);
     setDetailUser(null);
     setForm(emptyForm());
+    setMarksOpen(false);
+    setSubjectOptions([]);
+    setMarks(emptyMarks());
+  };
+
+  const openMarks = async () => {
+    if (!selected) return;
+    const semesterId = form.currentSemester || selected?.profile?.currentSemester?._id || "";
+    if (!semesterId) return;
+    setMarksOpen(true);
+    setMarksLoading(true);
+    try {
+      const res = await api.get("/api/subjects", { params: { semesterId }, meta: { silent: true } });
+      const subs = res.data?.subjects || [];
+      setSubjectOptions(subs);
+      setMarks((m) => ({ ...m, lines: linesFromSubjects(subs) }));
+    } catch {
+      setSubjectOptions([]);
+      setMarks((m) => ({ ...m, lines: [] }));
+    } finally {
+      setMarksLoading(false);
+    }
+  };
+
+  const saveMarks = async (e) => {
+    e.preventDefault();
+    if (!selected) return;
+    setMarksSaving(true);
+    try {
+      await api.put(
+        `/api/results/faculty/students/${selected.userId}`,
+        {
+          semester: form.currentSemester || null,
+          examTitle: marks.examTitle,
+          published: marks.published,
+          remarks: marks.remarks,
+          lines: marks.lines,
+        },
+        { meta: { successMessage: "Marks uploaded" } }
+      );
+      setMarksOpen(false);
+    } finally {
+      setMarksSaving(false);
+    }
   };
 
   const setAddr = (which, field, value) => {
@@ -426,6 +489,23 @@ export default function FacultyAssignedStudents() {
                     </select>
                   </Field>
                 </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={openMarks}
+                    disabled={!form.currentSemester}
+                    className={cx(ui.btnBase, ui.btnAccent)}
+                    title={!form.currentSemester ? "Set current semester first" : ""}
+                  >
+                    <Award className="h-4 w-4" aria-hidden />
+                    Upload marks
+                  </button>
+                  {!form.currentSemester ? (
+                    <p className="self-center text-xs text-slate-500">
+                      Select a <span className="font-semibold">current semester</span> to load subjects.
+                    </p>
+                  ) : null}
+                </div>
               </section>
 
               <section>
@@ -486,6 +566,155 @@ export default function FacultyAssignedStudents() {
                 />
               </section>
             </form>
+
+            <Modal
+              open={marksOpen}
+              title="Upload marks"
+              onClose={() => setMarksOpen(false)}
+              maxWidthClassName="max-w-4xl"
+              footer={
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <button type="button" onClick={() => setMarksOpen(false)} className={cx(ui.btnBase, ui.btnSoft)}>
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    form="faculty-marks-form"
+                    disabled={marksSaving || marksLoading}
+                    className={cx(ui.btnBase, ui.btnPrimary)}
+                  >
+                    {marksSaving ? "Saving…" : "Save marks"}
+                  </button>
+                </div>
+              }
+            >
+              <form id="faculty-marks-form" onSubmit={saveMarks} className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Exam title">
+                    <input
+                      className={ui.input}
+                      value={marks.examTitle}
+                      onChange={(e) => setMarks((m) => ({ ...m, examTitle: e.target.value }))}
+                      placeholder="e.g. Mid Term"
+                    />
+                  </Field>
+                  <Field label="Publish for student">
+                    <select
+                      className={ui.select}
+                      value={marks.published ? "yes" : "no"}
+                      onChange={(e) => setMarks((m) => ({ ...m, published: e.target.value === "yes" }))}
+                    >
+                      <option value="yes">Yes (student can see)</option>
+                      <option value="no">No (draft)</option>
+                    </select>
+                  </Field>
+                </div>
+                <Field label="Remarks">
+                  <textarea
+                    className={ui.textarea}
+                    rows={2}
+                    value={marks.remarks}
+                    onChange={(e) => setMarks((m) => ({ ...m, remarks: e.target.value }))}
+                  />
+                </Field>
+
+                <div className={cx(ui.dashTableCard)}>
+                  <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                    <div className="text-sm font-semibold text-slate-800">Subject marks</div>
+                    <div className="text-xs text-slate-500">{subjectOptions.length} subject(s)</div>
+                  </div>
+                  <div className={ui.dashTableScroller}>
+                    <table className={ui.dashTable}>
+                      <thead className={ui.dashTableHead}>
+                        <tr>
+                          <th className={ui.dashTableTh}>Subject</th>
+                          <th className={ui.dashTableTh}>Obtained</th>
+                          <th className={ui.dashTableTh}>Max</th>
+                          <th className={ui.dashTableTh}>Grade</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {marksLoading ? (
+                          <tr>
+                            <td colSpan={4} className={cx(ui.dashTableTd, "py-10 text-center text-slate-500")}>
+                              Loading subjects…
+                            </td>
+                          </tr>
+                        ) : marks.lines.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className={cx(ui.dashTableTd, "py-10 text-center text-slate-500")}>
+                              No subjects found for this semester.
+                            </td>
+                          </tr>
+                        ) : (
+                          marks.lines.map((line, idx) => (
+                            <tr key={line.subject || idx} className={ui.dashTableRow}>
+                              <td className={ui.dashTableTd}>
+                                <span className="font-medium text-slate-900">
+                                  {subjectOptions.find((s) => String(s._id) === String(line.subject))?.name || "—"}
+                                </span>
+                                {subjectOptions.find((s) => String(s._id) === String(line.subject))?.code ? (
+                                  <span className="ml-1 text-xs text-slate-500">
+                                    ({subjectOptions.find((s) => String(s._id) === String(line.subject))?.code})
+                                  </span>
+                                ) : null}
+                              </td>
+                              <td className={ui.dashTableTd}>
+                                <input
+                                  className={cx(ui.input, "py-2")}
+                                  type="number"
+                                  min="0"
+                                  value={line.obtained}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    setMarks((m) => {
+                                      const next = [...m.lines];
+                                      next[idx] = { ...next[idx], obtained: v === "" ? 0 : Number(v) };
+                                      return { ...m, lines: next };
+                                    });
+                                  }}
+                                />
+                              </td>
+                              <td className={ui.dashTableTd}>
+                                <input
+                                  className={cx(ui.input, "py-2")}
+                                  type="number"
+                                  min="0"
+                                  value={line.maxMarks}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    setMarks((m) => {
+                                      const next = [...m.lines];
+                                      next[idx] = { ...next[idx], maxMarks: v === "" ? 0 : Number(v) };
+                                      return { ...m, lines: next };
+                                    });
+                                  }}
+                                />
+                              </td>
+                              <td className={ui.dashTableTd}>
+                                <input
+                                  className={cx(ui.input, "py-2")}
+                                  value={line.grade}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    setMarks((m) => {
+                                      const next = [...m.lines];
+                                      next[idx] = { ...next[idx], grade: v };
+                                      return { ...m, lines: next };
+                                    });
+                                  }}
+                                  placeholder="A / B+"
+                                />
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </form>
+            </Modal>
           </div>
         ) : null}
       </Modal>
