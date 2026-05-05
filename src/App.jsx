@@ -12,17 +12,19 @@ import AdminSemestersPanel from "./components/admindashboard/AdminSemestersPanel
 
 import AdminAttendancePanel from "./components/admindashboard/AdminAttendancePanel";
 
+import AdminSubjects from "./components/admindashboard/AdminSubjects";
+
 import AdminProfile from "./components/admindashboard/AdminProfile";
 
 
 
 import FacultyDashboardContain from "./components/facultydashboard/FacultyDashboardContain";
-
 import FacultyDashboard from "./components/facultydashboard/FacultyDashboard";
-
 import FacultyProfile from "./components/facultydashboard/FacultyProfile";
-
 import FacultyAssignedStudents from "./components/facultydashboard/FacultyAssignedStudents";
+import FacultyCourses from "./components/facultydashboard/FacultyCourses";
+import FacultyMarks from "./components/facultydashboard/FacultyMarks";
+import FacultyAssignments from "./components/facultydashboard/FacultyAssignments";
 
 import LandingPage from "./pages/LandingPage";
 
@@ -45,6 +47,10 @@ import StudentLayout from "./components/studentdashboard/StudentLayout";
 import StudentDashboardContain from "./components/studentdashboard/StudentDashboardContain";
 
 import StudentProfile from "./components/studentdashboard/StudentProfile";
+import StudentCourses from "./components/studentdashboard/StudentCourses";
+import StudentMarks from "./components/studentdashboard/StudentMarks";
+import StudentAssignments from "./components/studentdashboard/StudentAssignments";
+import StudentNotice from "./components/studentdashboard/StudentNotice";
 
 import MyAttendancePanel from "./components/attendance/MyAttendancePanel";
 
@@ -104,6 +110,8 @@ function App() {
 
             <Route path="semesters" element={<AdminSemestersPanel />} />
 
+            <Route path="subjects" element={<AdminSubjects />} />
+
             <Route path="attendance" element={<AdminAttendancePanel />} />
 
             <Route path="timetable" element={<AdminTimetablePanel />} />
@@ -149,13 +157,10 @@ function App() {
 
             <Route path="results" element={<ResultsView variant="student" />} />
 
-            <Route path="courses" element={<DashboardPlaceholder title="Courses" />} />
-
-            <Route path="marks" element={<DashboardPlaceholder title="Marks" />} />
-
-            <Route path="assignments" element={<DashboardPlaceholder title="Assignments" />} />
-
-            <Route path="notice" element={<DashboardPlaceholder title="Notices" />} />
+            <Route path="courses" element={<StudentCourses />} />
+            <Route path="marks" element={<StudentMarks />} />
+            <Route path="assignments" element={<StudentAssignments />} />
+            <Route path="notice" element={<StudentNotice />} />
 
             <Route path="*" element={<Navigate to="/studentdashboard" replace />} />
 
@@ -180,12 +185,9 @@ function App() {
             <Route path="timetable" element={<TimetableView variant="faculty" />} />
 
             <Route path="results" element={<ResultsView variant="faculty" />} />
-
-            <Route path="courses" element={<DashboardPlaceholder title="Courses" />} />
-
-            <Route path="marks" element={<DashboardPlaceholder title="Marks" />} />
-
-            <Route path="assignments" element={<DashboardPlaceholder title="Assignments" />} />
+            <Route path="courses" element={<FacultyCourses />} />
+            <Route path="marks" element={<FacultyMarks />} />
+            <Route path="assignments" element={<FacultyAssignments />} />
 
             <Route path="*" element={<Navigate to="/facultydashboard" replace />} />
 

@@ -1,12 +1,30 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, RefreshCw } from "lucide-react";
 import { api } from "../../lib/apiClient";
 import Modal from "../common/Modal";
 import { cx, ui } from "../../lib/ui";
+
+function courseLabel(c) {
+  if (!c) return "—";
+  const obj = typeof c === "object" ? c : null;
+  if (!obj) return "—";
+  const dep = obj.department;
+  const depPart = dep && typeof dep === "object" ? ` · ${dep.name}` : "";
+  return `${obj.courseName} (${obj.courseCode})${depPart}`;
+}
+
+function semesterLabel(s) {
+  if (!s || typeof s !== "object") return "—";
+  const n = s.number != null ? `Sem ${s.number}` : "Sem";
+  return s.title ? `${n} — ${s.title}` : n;
+}
 
 export default function AdminSubjects() {
   const [courses, setCourses] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [facultyOptions, setFacultyOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [courseId, setCourseId] = useState("");
   const [semesterId, setSemesterId] = useState("");
@@ -19,6 +37,7 @@ export default function AdminSubjects() {
     code: "",
     name: "",
     credits: 0,
+    faculty: "",
   });
 
   const semesterOptions = useMemo(() => {
@@ -26,43 +45,60 @@ export default function AdminSubjects() {
     return semesters.filter((s) => (s.course?._id || s.course) === courseId);
   }, [semesters, courseId]);
 
-  const loadCourses = async () => {
+  const loadCourses = useCallback(async () => {
     const res = await api.get("/api/course/all");
-    setCourses(res.data.courses || []);
-  };
+    setCourses((res.data?.courses || []).filter((c) => c.isActive !== false));
+  }, []);
 
-  const loadSemesters = async () => {
+  const loadFaculty = useCallback(async () => {
+    const res = await api.get("/api/v1/user/getalluser");
+    const all = res.data?.data || [];
+    setFacultyOptions(all.filter((u) => u.role === "faculty"));
+  }, []);
+
+  const loadSemesters = useCallback(async () => {
     const res = await api.get("/api/semesters", {
       params: courseId ? { courseId } : undefined,
     });
-    setSemesters(res.data.semesters || []);
-  };
+    setSemesters(res.data?.semesters || []);
+  }, [courseId]);
 
-  const loadSubjects = async () => {
+  const loadSubjects = useCallback(async () => {
     const res = await api.get("/api/subjects", {
       params: {
         ...(courseId ? { courseId } : {}),
         ...(semesterId ? { semesterId } : {}),
       },
+      meta: { silent: true },
     });
-    setSubjects(res.data.subjects || []);
-  };
+    setSubjects(res.data?.subjects || []);
+  }, [courseId, semesterId]);
 
   useEffect(() => {
-    Promise.all([loadCourses(), loadSemesters(), loadSubjects()]).catch(console.log);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        await Promise.all([loadCourses(), loadFaculty()]);
+        await loadSemesters();
+        await loadSubjects();
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    loadSemesters().catch(console.log);
+    loadSemesters().catch(() => {});
     setSemesterId("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
   useEffect(() => {
-    loadSubjects().catch(console.log);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courseId, semesterId]);
+    loadSubjects().catch(() => {});
+  }, [courseId, semesterId, loadSubjects]);
 
   const openCreate = () => {
     setEditId(null);
@@ -72,6 +108,7 @@ export default function AdminSubjects() {
       code: "",
       name: "",
       credits: 0,
+      faculty: "",
     });
     setOpen(true);
   };
@@ -84,6 +121,7 @@ export default function AdminSubjects() {
       code: s.code,
       name: s.name,
       credits: s.credits ?? 0,
+      faculty: s.faculty?._id || s.faculty || "",
     });
     setOpen(true);
   };
@@ -95,12 +133,19 @@ export default function AdminSubjects() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    const payload = {
+      ...form,
+      code: String(form.code || "").trim(),
+      name: String(form.name || "").trim(),
+      credits: Number(form.credits) || 0,
+      faculty: form.faculty || null,
+    };
     if (editId) {
-      await api.put(`/api/subjects/${editId}`, form, {
+      await api.put(`/api/subjects/${editId}`, payload, {
         meta: { successMessage: "Subject updated." },
       });
     } else {
-      await api.post("/api/subjects", form, {
+      await api.post("/api/subjects", payload, {
         meta: { successMessage: "Subject created." },
       });
     }
@@ -117,20 +162,34 @@ export default function AdminSubjects() {
   };
 
   return (
-    <div className={cx(ui.page, "p-4 sm:p-6")}>
-      <div className={cx(ui.cardHeader, "mb-6")}>
+    <div className={cx("p-4 sm:p-6 lg:p-8", ui.page)}>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className={ui.h1}>Subjects</h1>
-          <p className="text-sm text-slate-500">
-            Create subjects and map them to course + semester.
+          <h1 className={cx(ui.h1, "tracking-tight")}>Subjects</h1>
+          <p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-600">
+            Create subjects under a course + semester, and optionally assign a faculty member. Timetable slots and
+            result sheets use these subjects.
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+        <button
+          type="button"
+          onClick={() => loadSubjects()}
+          disabled={loading}
+          className={cx(ui.btnBase, ui.btnSoft, "shrink-0 self-start sm:self-auto")}
+        >
+          <RefreshCw className={cx("h-4 w-4", loading && "animate-spin")} aria-hidden />
+          Refresh
+        </button>
+      </div>
+
+      <div className={cx(ui.card, "mb-6 flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between")}>
+        <div className="min-w-0 flex-1">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Course</label>
           <select
             value={courseId}
             onChange={(e) => setCourseId(e.target.value)}
-            className={cx(ui.select, "lg:w-72")}
+            className={cx(ui.select, "max-w-md")}
           >
             <option value="">All Courses</option>
             {courses.map((c) => (
@@ -139,11 +198,14 @@ export default function AdminSubjects() {
               </option>
             ))}
           </select>
+        </div>
 
+        <div className="min-w-0 flex-1">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Semester</label>
           <select
             value={semesterId}
             onChange={(e) => setSemesterId(e.target.value)}
-            className={cx(ui.select, "lg:w-64")}
+            className={cx(ui.select, "max-w-md")}
             disabled={!courseId}
           >
             <option value="">All Semesters</option>
@@ -153,16 +215,17 @@ export default function AdminSubjects() {
               </option>
             ))}
           </select>
-
-          <button className={cx(ui.btnBase, ui.btnAccent)} onClick={openCreate}>
-            + Add Subject
-          </button>
         </div>
+
+        <button type="button" className={cx(ui.btnBase, ui.btnPrimary, "shrink-0")} onClick={openCreate}>
+          <Plus className="h-4 w-4" aria-hidden />
+          Add subject
+        </button>
       </div>
 
       <div className={ui.dashTableCard}>
         <div className={ui.dashTableScroller}>
-          <table className={cx(ui.dashTable, "min-w-[980px]")}>
+          <table className={cx(ui.dashTable, "min-w-[1100px]")}>
             <thead>
               <tr className={ui.dashTableHead}>
                 <th className={ui.dashTableTh}>Code</th>
@@ -170,6 +233,7 @@ export default function AdminSubjects() {
                 <th className={ui.dashTableTh}>Credits</th>
                 <th className={ui.dashTableTh}>Semester</th>
                 <th className={ui.dashTableTh}>Course</th>
+                <th className={ui.dashTableTh}>Faculty</th>
                 <th className={ui.dashTableTh}>Actions</th>
               </tr>
             </thead>
@@ -179,17 +243,16 @@ export default function AdminSubjects() {
                   <td className={cx(ui.dashTableTd, "font-semibold")}>{s.code}</td>
                   <td className={ui.dashTableTd}>{s.name}</td>
                   <td className={ui.dashTableTd}>{s.credits ?? 0}</td>
-                  <td className={ui.dashTableTd}>{s.semester || "—"}</td>
-                  <td className={ui.dashTableTd}>{s.course || "—"}</td>
+                  <td className={ui.dashTableTd}>{semesterLabel(s.semester)}</td>
+                  <td className={ui.dashTableTd}>{courseLabel(s.course)}</td>
+                  <td className={ui.dashTableTd}>{s.faculty?.name || "—"}</td>
                   <td className={ui.dashTableTd}>
                     <div className="flex flex-wrap gap-2">
-                      <button
-                        className={cx(ui.btnBase, ui.btnSoft, "px-3 py-1.5")}
-                        onClick={() => openEdit(s)}
-                      >
+                      <button type="button" className={cx(ui.btnBase, ui.btnSoft, "px-3 py-1.5")} onClick={() => openEdit(s)}>
                         Edit
                       </button>
                       <button
+                        type="button"
                         className={cx(ui.btnBase, ui.btnDanger, "px-3 py-1.5")}
                         onClick={() => onDelete(s._id)}
                       >
@@ -202,8 +265,8 @@ export default function AdminSubjects() {
 
               {subjects.length === 0 ? (
                 <tr>
-                  <td className={cx(ui.dashTableTd, "py-8 text-sm text-slate-500")} colSpan={6}>
-                    No subjects found.
+                  <td className={cx(ui.dashTableTd, "py-10 text-center text-sm text-slate-500")} colSpan={7}>
+                    {loading ? "Loading…" : "No subjects found."}
                   </td>
                 </tr>
               ) : null}
@@ -302,6 +365,25 @@ export default function AdminSubjects() {
                 className={ui.input}
               />
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Faculty (optional)</label>
+            <select
+              value={form.faculty}
+              onChange={(e) => setForm((p) => ({ ...p, faculty: e.target.value }))}
+              className={ui.select}
+            >
+              <option value="">Unassigned</option>
+              {facultyOptions.map((f) => (
+                <option key={f._id} value={f._id}>
+                  {f.name} — {f.email}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Assigning faculty makes their timetable automatically show these subjects’ periods.
+            </p>
           </div>
 
           <div>

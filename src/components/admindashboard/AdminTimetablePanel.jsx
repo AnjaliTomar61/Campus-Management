@@ -58,7 +58,12 @@ export default function AdminTimetablePanel() {
     (async () => {
       try {
         const res = await api.get("/api/course/all");
-        setCourses((res.data?.courses || []).filter((c) => c.isActive !== false));
+        const courses =
+          res?.data?.courses ||
+          res?.data?.data?.courses ||
+          res?.data?.data ||
+          [];
+        setCourses((Array.isArray(courses) ? courses : []).filter((c) => c?.isActive !== false));
       } catch {
         setCourses([]);
       }
@@ -202,7 +207,7 @@ export default function AdminTimetablePanel() {
       </div>
 
       <div className={cx(ui.card, "flex flex-col gap-4 p-5 sm:flex-row sm:flex-wrap sm:items-end")}>
-        <div className="min-w-[12rem] flex-1">
+        <div className="min-w-48 flex-1">
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Course</label>
           <select
             className={ui.select}
@@ -217,7 +222,7 @@ export default function AdminTimetablePanel() {
             ))}
           </select>
         </div>
-        <div className="min-w-[12rem] flex-1">
+        <div className="min-w-48 flex-1">
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Semester</label>
           <select
             className={ui.select}
@@ -256,7 +261,7 @@ export default function AdminTimetablePanel() {
 
       {semesterId && subjects.length === 0 && !subjectsLoadError ? (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          No subjects are defined for this semester yet. Add subjects under Programs (catalog) for this course and
+          No subjects are defined for this semester yet. Add them under <strong>Subjects</strong> for this course and
           semester, then you can attach timetable slots to them.
         </p>
       ) : null}
